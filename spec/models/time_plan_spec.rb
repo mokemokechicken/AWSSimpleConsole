@@ -108,7 +108,7 @@ describe TimePlan do
 
   it '月〜金 && 10-19 inlucde Thu,14' do
     @obj.parse('月〜金 && 10-19')
-    @obj.include?(4, 14).should be_true
+    @obj.include?('木', 14).should be_true
   end
 
   it '月〜金 && 10-19 donot inlucde Sat,14' do
@@ -130,5 +130,11 @@ describe TimePlan do
   it '金〜火 && 10-19 donot inlucde Sun,23' do
     @obj.parse('金〜火 && 10-19')
     @obj.include?(0, 23).should be_false
+    @obj.include?('日', 23).should be_false
+  end
+
+  it 'TimePlan.parse should be work' do
+    TimePlan.parse('金〜火 && 10-19').include?(3, 14).should be_false
+    TimePlan.parse('金〜火 && 10-19').include?('水', 14).should be_false
   end
 end

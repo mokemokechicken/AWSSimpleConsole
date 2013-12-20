@@ -7,8 +7,22 @@ class TimePlan
     @conditions = []
   end
 
+  def self.parse(plan)
+    new.parse(plan)
+  end
+
   def parse(plan)
     parse_and(plan)
+    self
+  end
+
+  def include?(wday, hour)
+    @conditions.each do |cond_obj|
+      unless cond_obj.check({:wday => wday, :hour => hour})
+        return false
+      end
+    end
+    true
   end
 
   def parse_and(plan)
@@ -44,15 +58,6 @@ class TimePlan
     from_obj.upto(to_obj) do |t|
       yield t
     end
-  end
-
-  def include?(wday, hour)
-    @conditions.each do |cond_obj|
-      unless cond_obj.check({:wday => wday, :hour => hour})
-        return false
-      end
-    end
-    true
   end
 end
 
@@ -139,7 +144,11 @@ class WdayCondition < Condition
   end
 
   def check(target)
-    target[:wday] == @wday
+    if WDAYS_KANJI.include?(target[:wday])
+      WDAYS_KANJI.index(target[:wday]) == @wday
+    else
+      target[:wday] == @wday
+    end
   end
 end
 
