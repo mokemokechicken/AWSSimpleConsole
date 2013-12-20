@@ -47,3 +47,7 @@ end
 
 gem 'aws-sdk'
 
+gem 'activeldap'
+gem 'net-ldap'
+
+gem 'rspec-rails'
