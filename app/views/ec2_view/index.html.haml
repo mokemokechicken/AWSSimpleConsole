@@ -1,0 +1,11 @@
+.row-fluid
+  .span1
+  .span8
+    %h1 test
+    %div#main
+
+:coffee
+  $ ->
+    ec2 = AWSSC.EC2
+      canvas: "main"
+    ec2.show_ec2_instances()

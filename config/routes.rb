@@ -5,6 +5,11 @@ AWSSimpleConsole::Application.routes.draw do
   # You can have the root of your site routed with "root"
   # root 'welcome#index'
 
+  get 'ec2_view/' => 'ec2_view#index'
+
+  get 'api/ec2/' => 'api/ec2#index'
+  get 'api/ec2/:ec2_id' => 'api/ec2#show'
+
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'
 
