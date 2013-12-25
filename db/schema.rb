@@ -17,6 +17,7 @@ ActiveRecord::Schema.define(version: 20131224082447) do
     t.string   "ec2_id"
     t.string   "tag_json"
     t.string   "instance_type"
+    t.string   "status"
     t.datetime "launch_time"
     t.datetime "created_at"
     t.datetime "updated_at"

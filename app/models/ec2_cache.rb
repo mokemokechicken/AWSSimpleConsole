@@ -1,6 +1,7 @@
 class Ec2Cache < ActiveRecord::Base
-  EXPIRE_SEC = 3600
-  def self.fetch(ec2, cache_expire=EXPIRE_SEC)
+  EXPIRE_SEC = 86400
+  def self.fetch(ec2, cache_expire=nil)
+    cache_expire ||= EXPIRE_SEC
     ec2_cache = Ec2Cache.where(:ec2_id => ec2.id).first
     if not ec2_cache
       ec2_cache = create_cache(ec2)
@@ -19,6 +20,7 @@ class Ec2Cache < ActiveRecord::Base
     self.tag_json = ec2.tags.to_h.to_json
     self.launch_time = ec2.launch_time
     self.instance_type = ec2.instance_type
+    self.status = ec2.status
     save!
     self
   end

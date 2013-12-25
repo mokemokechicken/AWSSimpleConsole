@@ -1,11 +1,14 @@
 .row-fluid
   .span1
-  .span8
-    %h1 test
+  .span10
+    %input#reload(type="button" value="更新")
+    %input#toggle_hide_stop(type="button" value="stoppedを隠す/表示")
     %div#main
 
 :coffee
   $ ->
     ec2 = AWSSC.EC2
       canvas: "main"
+      reload: "reload"
+      toggle_hide_stop: "toggle_hide_stop"
     ec2.show_ec2_instances()

@@ -1,3 +1,82 @@
 // Place all the styles related to the ec2_view controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+
+@mixin border-radius($radius) {
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+  -ms-border-radius: $radius;
+  -o-border-radius: $radius;
+  border-radius: $radius;
+}
+
+.hidden {
+  display: none;
+}
+
+.ec2-panel-item {
+  @include border-radius(5px);
+  border-style: solid;
+  border-color: #262626;
+  margin: 3px;
+  padding: 2px;
+  display: inline-block;
+
+  .running {
+    color: green;
+  }
+
+  .stopped {
+    color: red;
+  }
+
+}
+
+.ec2-panel-item-name {
+  text-align: center;
+}
+
+.ec2-panel-item-type {
+  text-align: center;
+}
+
+.ec2-panel-item-launch-time {
+  text-align: center;
+}
+
+.ec2-panel-item-status {
+  text-align: center;
+}
+
+.ec2-panel-item-cost {
+  text-align: center;
+}
+
+.t1micro    { font-size: x-small; }
+.m1small    { font-size: medium; }
+.m3xlarge   { font-size: xx-large; }
+.m32xlarge  { font-size: xx-large; }
+.m1medium   { font-size: medium; }
+.m1large    { font-size: large; }
+.m1xlarge   { font-size: x-large; }
+.c3large    { font-size: large; }
+.c3xlarge   { font-size: x-large; }
+.c32xlarge  { font-size: xx-large; }
+.c34xlarge  { font-size: xx-large; }
+.c38xlarge  { font-size: xx-large; }
+.c1medium   { font-size: medium; }
+.c1xlarge   { font-size: x-large; }
+.cc28xlarge { font-size: xx-large; }
+.g22xlarge  { font-size: x-large; }
+.cg14xlarge { font-size: xx-large; }
+.m2xlarge   { font-size: x-large; }
+.m22xlarge  { font-size: x-large; }
+.m24xlarge  { font-size: xx-large; }
+.cr18xlarge { font-size: xx-large; }
+.i2xlarge   { font-size: x-large; }
+.i22xlarge  { font-size: x-large; }
+.i24xlarge  { font-size: xx-large; }
+.i28xlarge  { font-size: xx-large; }
+.hs18xlarge { font-size: xx-large; }
+.hi14xlarge { font-size: xx-large; }
+

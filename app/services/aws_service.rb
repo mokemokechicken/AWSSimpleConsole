@@ -24,20 +24,17 @@ class AWSService
     ec2.instances.to_a
   end
 
-  def ec2_list_as_model
-    ec2_list.map {|ec2| Ec2Cache.fetch(ec2)}
+  def ec2_list_as_model(cache_expire=nil)
+    ec2_list.map {|ec2| Ec2Cache.fetch(ec2, cache_expire)}
   end
 
   def ec2_instance(ec2_id)
     ec2.instances[ec2_id]
   end
 
-  def fetch_detail(ec2_id)
-    ec2 = aws.ec2_instance(ec2_id)
-    ec2_cache = Ec2Cache.fetch(ec2)
-    hash = JSON.parse(ec2_cache.as_json)
-    hash[:status] = ec2.status
-    return hash
+  def refresh(ec2_id)
+    ec2 = ec2_instance(ec2_id)
+    Ec2Cache.fetch(ec2, -1)
   end
 end
 
