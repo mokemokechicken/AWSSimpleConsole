@@ -59,3 +59,5 @@ gem 'activeldap'
 gem 'net-ldap'
 
 gem 'rspec-rails'
+
+gem 'puma'
