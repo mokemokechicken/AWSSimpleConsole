@@ -1,6 +1,10 @@
 AWSSC = AWSSC ? {}
 window.AWSSC = AWSSC
 
+$.wait = (duration) ->
+  dfd = $.Deferred()
+  setTimeout(dfd.resolve, duration)
+  return dfd
 
 AWSSC.EC2 = (opts) ->
   self = {}
@@ -35,22 +39,57 @@ AWSSC.EC2 = (opts) ->
 AWSSC.EC2Model = (data) ->
   self = {}
   self.data = data
+  self.region = data.region
+  polling_sec = 10000
 
-  self.is_running = ->
-    self.data.status == "running"
+  self.is_running = -> self.data.status == "running"
+
+  self.is_stopped = -> self.data.status == "stopped"
 
   self.can_start_stop = ->
     self.data.tags['APIStartStop'] == 'YES'
 
   self.update = ->
-    $.get("/api/ec2/#{self.data.ec2_id}?region=#{self.data.region}").done (response) ->
-      console.log response
-      self.data = response.ec2
+    $.get("/api/ec2/#{self.data.ec2_id}?region=#{self.region}")
+    .done (response) ->
+        self.data = response.ec2
+    .always (response) ->
+        console.log response
+
+
+  check_state = (dfd, ok_func, ng_func) ->
+    $.wait(polling_sec).done ->
+      self.update().done ->
+        if ok_func()
+          dfd.resolve()
+        else if ng_func()
+          dfd.fail()
+        else
+          dfd.notify()
+          check_state()
 
   self.start_instance = ->
-    $.post("/api/ec2/#{self.data.ec2_id}/start?region=#{self.data.region}").done (response) ->
-      console.log response
+    dfd = $.Deferred()
+    $.post("/api/ec2/#{self.data.ec2_id}/start?region=#{self.region}")
+    .always (response) ->
+        console.log(response)
+    .fail (response) ->
+        dfd.reject(response)
+    .done (response) ->
+        check_state(dfd, self.is_running, self.is_stopped)
+    dfd.promise()
 
+
+  self.stop_instance = ->
+    dfd = $.Deferred()
+    $.post("/api/ec2/#{self.data.ec2_id}/stop?region=#{self.region}")
+    .always (response) ->
+      console.log response
+    .fail (response) ->
+        dfd.reject(response)
+    .done (response) ->
+        check_state(dfd, self.is_stopped, self.is_running)
+    dfd.promise()
 
   return self
 
@@ -89,13 +128,12 @@ AWSSC.PanelView = (model) ->
   self.model = model
   self.content = $('<div class="ec2-panel-item">')
   .append($('<div class="ec2-panel-item-name">'))
-  .append((update_btn = $('<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span></button>') ))
+  .append((update_btn = $('<button type="button" class="btn btn-small">UPDATE</button>') ))
   .append($('<div class="ec2-panel-item-type">'))
   .append($('<div class="ec2-panel-item-launch-time">'))
   .append($('<div class="ec2-panel-item-status">'))
   .append((start_stop_btn = $('<button type="button" class="btn btn-default ec2-start-stop">')))
   .append($('<div class="ec2-panel-item-cost">').html("-"))
-
 
   confirm_action = ->
     a = Math.floor(Math.random() * 100)
@@ -108,9 +146,18 @@ AWSSC.PanelView = (model) ->
   start_stop_btn.on "click", ->
     if confirm_action()
       if model.is_running()
-        model.stop_instance()
+        dfd = model.stop_instance()
       else
-        model.start_instance()
+        dfd = model.start_instance()
+      dfd.progress ->
+        self.update_view()
+      .always ->
+        self.update_view()
+
+  update_btn.on "click", ->
+    self.model.update().done ->
+      self.update_view()
+
 
   self.update_view = ->
     data = self.model.data

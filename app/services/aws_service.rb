@@ -36,6 +36,30 @@ class AWSService
     ec2 = ec2_instance(ec2_id)
     Ec2Cache.fetch(ec2, -1)
   end
+
+  def start(ec2_id)
+    ec2 = ec2_instance(ec2_id)
+    status = ec2.status
+    message = 'OK'
+    if status == :stopped
+      ec2.start
+    else
+      message = "NG. status is #{status}, not 'stopped'."
+    end
+    return {:message => message}
+  end
+
+  def stop(ec2_id)
+    ec2 = ec2_instance(ec2_id)
+    status = ec2.status
+    message = 'OK'
+    if status == :running
+      ec2.stop
+    else
+      message = "NG. status is #{status}, not 'running'."
+    end
+    return {:message => message}
+  end
 end
 
 

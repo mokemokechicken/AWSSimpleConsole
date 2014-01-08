@@ -11,4 +11,18 @@ class Api::Ec2Controller < ApplicationController
     aws = AWSService.new(:region => params[:region])
     render :json => {:ec2 => aws.refresh(ec2_id)}
   end
+
+  def start
+    ec2_id = params[:ec2_id]
+    aws = AWSService.new(:region => params[:region])
+    ret = aws.start(ec2_id)
+    render :json => {:result => ret}
+  end
+
+  def stop
+    ec2_id = params[:ec2_id]
+    aws = AWSService.new(:region => params[:region])
+    ret = aws.stop(ec2_id)
+    render :json => {:result => ret}
+  end
 end
