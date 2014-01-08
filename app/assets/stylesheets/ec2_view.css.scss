@@ -21,6 +21,7 @@
   margin: 3px;
   padding: 2px;
   display: inline-block;
+  text-align: center;
 
   .running {
     color: green;
@@ -49,6 +50,10 @@
 }
 
 .ec2-panel-item-cost {
+  text-align: center;
+}
+
+.ec2-start-stop {
   text-align: center;
 }
 

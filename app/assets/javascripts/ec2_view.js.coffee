@@ -36,10 +36,22 @@ AWSSC.EC2Model = (data) ->
   self = {}
   self.data = data
 
+  self.is_running = ->
+    self.data.status == "running"
+
+  self.can_start_stop = ->
+    self.data.tags['APIStartStop'] == 'YES'
+
   self.update = ->
     $.get("/api/ec2/#{self.data.ec2_id}?region=#{self.data.region}").done (response) ->
       console.log response
       self.data = response.ec2
+
+  self.start_instance = ->
+    $.post("/api/ec2/#{self.data.ec2_id}/start?region=#{self.data.region}").done (response) ->
+      console.log response
+
+
   return self
 
 AWSSC.PanelViewController = (opts) ->
@@ -77,11 +89,28 @@ AWSSC.PanelView = (model) ->
   self.model = model
   self.content = $('<div class="ec2-panel-item">')
   .append($('<div class="ec2-panel-item-name">'))
+  .append((update_btn = $('<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span></button>') ))
   .append($('<div class="ec2-panel-item-type">'))
   .append($('<div class="ec2-panel-item-launch-time">'))
   .append($('<div class="ec2-panel-item-status">'))
+  .append((start_stop_btn = $('<button type="button" class="btn btn-default ec2-start-stop">')))
   .append($('<div class="ec2-panel-item-cost">').html("-"))
 
+
+  confirm_action = ->
+    a = Math.floor(Math.random() * 100)
+    b = Math.floor(Math.random() * 100)
+    c = prompt("#{a} + #{b} == ??")
+    ret = (a + b == Math.floor(c))
+    console.log ret
+    ret
+
+  start_stop_btn.on "click", ->
+    if confirm_action()
+      if model.is_running()
+        model.stop_instance()
+      else
+        model.start_instance()
 
   self.update_view = ->
     data = self.model.data
@@ -94,8 +123,17 @@ AWSSC.PanelView = (model) ->
     self.content.find(".ec2-panel-item-type").html(data.instance_type).addClass(data.instance_type.replace(".", ""))
     self.content.find(".ec2-panel-item-launch-time").html(launch_time.toLocaleString())
     self.content.find(".ec2-panel-item-status").html(data.status).addClass(data.status)
-    if data.status == "running"
+    if model.is_running()
       self.content.find(".ec2-panel-item-cost").html("#{hours}H × #{cost_per_hour}$ ≒ #{cost}$")
+      self.content.find(".ec2-start-stop").html("STOP")
+    else
+      self.content.find(".ec2-start-stop").html("START")
+    unless model.can_start_stop()
+      self.content.find(".ec2-start-stop").hide()
+
+
+
+
 
   self.reload = ->
     self.model.update().done (response) ->

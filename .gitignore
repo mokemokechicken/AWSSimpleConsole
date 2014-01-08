@@ -22,3 +22,5 @@ env.json
 .idea
 
 /vendor/
+
+.ruby-version
