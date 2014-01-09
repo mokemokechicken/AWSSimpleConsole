@@ -3,7 +3,9 @@ window.AWSSC = AWSSC
 
 $.wait = (duration) ->
   dfd = $.Deferred()
-  setTimeout(dfd.resolve, duration)
+  setTimeout( ->
+    dfd.resolve()
+  , duration)
   return dfd
 
 AWSSC.EC2 = (opts) ->
@@ -37,9 +39,11 @@ AWSSC.EC2 = (opts) ->
   return self
 
 AWSSC.EC2Model = (data) ->
+  API_BASE = "/api/ec2/"
   self = {}
   self.data = data
   self.region = data.region
+  api_params = -> region: self.region
   polling_sec = 10000
 
   self.is_running = -> self.data.status == "running"
@@ -49,13 +53,15 @@ AWSSC.EC2Model = (data) ->
   self.can_start_stop = ->
     self.data.tags['APIStartStop'] == 'YES'
 
+  self.run_schedule = ->
+    self.data.tags['APIRunSchedule']
+
   self.update = ->
-    $.get("/api/ec2/#{self.data.ec2_id}?region=#{self.region}")
+    $.get("#{API_BASE}#{self.data.ec2_id}", api_params())
     .done (response) ->
         self.data = response.ec2
     .always (response) ->
         console.log response
-
 
   check_state = (dfd, ok_func, ng_func) ->
     $.wait(polling_sec).done ->
@@ -66,29 +72,57 @@ AWSSC.EC2Model = (data) ->
           dfd.fail()
         else
           dfd.notify()
-          check_state()
+          check_state(dfd, ok_func, ng_func)
 
-  self.start_instance = ->
-    dfd = $.Deferred()
-    $.post("/api/ec2/#{self.data.ec2_id}/start?region=#{self.region}")
+  post_api = (dfd, op_type, params=api_params()) ->
+    $.post("#{API_BASE}#{self.data.ec2_id}/#{op_type}", params)
     .always (response) ->
         console.log(response)
     .fail (response) ->
-        dfd.reject(response)
-    .done (response) ->
-        check_state(dfd, self.is_running, self.is_stopped)
-    dfd.promise()
+        console.log(response.responseText)
+        dfd.reject("ERROR Status=#{response.status}")
 
+
+  self.start_instance = ->
+    dfd = $.Deferred()
+    post_api(dfd, "start").done ->
+      check_state(dfd, self.is_running, self.is_stopped)
+    self.data.status = '-'
+    dfd.promise()
 
   self.stop_instance = ->
     dfd = $.Deferred()
-    $.post("/api/ec2/#{self.data.ec2_id}/stop?region=#{self.region}")
-    .always (response) ->
-      console.log response
-    .fail (response) ->
-        dfd.reject(response)
-    .done (response) ->
-        check_state(dfd, self.is_stopped, self.is_running)
+    post_api(dfd, "stop").done ->
+      check_state(dfd, self.is_stopped, self.is_running)
+    dfd.promise()
+
+  lock_unlock_operation = (op_type, password) ->
+    dfd = $.Deferred()
+    params = api_params()
+    params.password = password
+    post_api(dfd, op_type, params).done (response) ->
+      if response.success
+        $.wait(500).done ->
+          dfd.resolve()
+      else
+        dfd.reject(response.message)
+    dfd.promise()
+
+  self.lock_operation = (password) ->
+    lock_unlock_operation("lock", password)
+
+  self.unlock_operation = (password) ->
+    lock_unlock_operation("unlock", password)
+
+  self.update_schedule = (val) ->
+    dfd = $.Deferred()
+    params = api_params()
+    params.schedule = val
+    post_api(dfd, "schedule", params).done (response) ->
+      if response.success
+        dfd.resolve()
+      else
+        dfd.reject(response.message)
     dfd.promise()
 
   return self
@@ -120,36 +154,116 @@ AWSSC.PanelViewController = (opts) ->
     canvas.append(panel.content)
     panel.update_view()
 
+  return self
 
+AWSSC.ModalDialog = ->
+  self = {}
+  self.show = (opts) ->
+    dialog = $("<div>").html(opts.body)
+    $("body").append(dialog)
+    dialog.dialog
+      title: opts.title
+      modal: true
+      buttons:
+        "OK": -> dialog.dialog("close")
+      close: -> dialog.remove()
+  return self
+
+AWSSC.ModalPrompt = ->
+  self = {}
+  self.show = (opts) ->
+    dfd = $.Deferred()
+    dialog = $("<div>").html(opts.body).hide()
+    textInput = $('<input type="text">').attr(size: opts.size || 30)
+    textInput.val(opts.value) if opts.value
+    textInput.on "keypress", (e) ->
+      if e.keyCode == 13
+        ok_button_pressed()
+    ok_button_pressed = ->
+      dfd.resolve(textInput.val())
+      dialog.dialog("close")
+
+    dialog.append($("<div>").append(textInput))
+    $("body").append(dialog)
+    dialog.dialog
+      title: opts.title
+      modal: true
+      buttons:
+        "OK": ok_button_pressed
+        "Cancel": -> dialog.dialog("close")
+      close: ->
+        dialog.remove()
+        dfd.reject(null)
+    dfd.promise()
   return self
 
 AWSSC.PanelView = (model) ->
   self = {}
   self.model = model
+  name = model.data.tags.Name
+  # construct view and controll
+  update_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-refresh"></i></button>')
+  start_stop_btn = $('<button type="button" class="btn btn-default ec2-start-stop">')
+  lock_unlock_btn = $('<button type="button" class="btn btn-small"></button>')
+  edit_schedule_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-edit"> <i class="icon icon-calendar"></button>')
+  schedule_element = $('<span class="ec2-panel-item-schedule">')
   self.content = $('<div class="ec2-panel-item">')
+  .append(update_btn)
+  .append(edit_schedule_btn)
+  .append(lock_unlock_btn)
   .append($('<div class="ec2-panel-item-name">'))
-  .append((update_btn = $('<button type="button" class="btn btn-small">UPDATE</button>') ))
   .append($('<div class="ec2-panel-item-type">'))
   .append($('<div class="ec2-panel-item-launch-time">'))
   .append($('<div class="ec2-panel-item-status">'))
-  .append((start_stop_btn = $('<button type="button" class="btn btn-default ec2-start-stop">')))
+  .append($('<span>').html("Schedule: "))
+  .append(schedule_element)
+  .append($("<div>").append(start_stop_btn))
   .append($('<div class="ec2-panel-item-cost">').html("-"))
 
-  confirm_action = ->
+  confirm_action = (msg) ->
+    dfd = $.Deferred()
     a = Math.floor(Math.random() * 100)
     b = Math.floor(Math.random() * 100)
-    c = prompt("#{a} + #{b} == ??")
-    ret = (a + b == Math.floor(c))
-    console.log ret
-    ret
+    AWSSC.ModalPrompt().show
+      title: "Are you sure?"
+      body: "#{msg}<br/>#{a} + #{b} == ??"
+    .done (val) ->
+      ret = (a + b == Math.floor(val))
+      if ret
+        dfd.resolve()
+      else
+        dfd.reject()
+    .fail ->
+      dfd.reject()
+    dfd.promise()
+
+  confirm_admin = (msg) ->
+    # prompt("#{msg}\nPlease Input Admin Password")
+    AWSSC.ModalPrompt().show
+      title: "Admin Auth"
+      body: "#{msg}<br/>Please Input Admin Password"
+
+  show_message = (msg, title) ->
+    AWSSC.ModalDialog().show
+      title: title
+      body: msg
 
   start_stop_btn.on "click", ->
-    if confirm_action()
-      if model.is_running()
-        dfd = model.stop_instance()
-      else
-        dfd = model.start_instance()
-      dfd.progress ->
+    if model.is_running()
+      prm = confirm_action("Do you really want to STOP '#{name}' ?")
+      .fail ->
+        show_message("Canceled", "info")
+      .then ->
+        model.stop_instance()
+    else if model.is_stopped()
+      prm = confirm_action("Do you really want to START '#{name}' ?")
+      .fail ->
+          show_message("Canceled", "info")
+      .then ->
+        model.start_instance()
+    if prm
+      self.update_view()
+      prm.progress ->
         self.update_view()
       .always ->
         self.update_view()
@@ -158,6 +272,32 @@ AWSSC.PanelView = (model) ->
     self.model.update().done ->
       self.update_view()
 
+  lock_unlock_btn.on "click", ->
+    if self.model.can_start_stop()
+      prm = confirm_admin("Do you really want to LOCK<br/> '#{name}' ?").then (password) ->
+        self.model.lock_operation(password)
+    else
+      prm = confirm_admin("Do you really want to UNLOCK '#{name}' ?").then (password) ->
+        self.model.unlock_operation(password)
+    if prm
+      prm.done ->
+        model.update().done ->
+          self.update_view()
+      .fail (reason) ->
+        show_message(reason, "failure") if reason
+
+  edit_schedule_btn.on "click", ->
+    AWSSC.ModalPrompt().show
+      title: "Enter Schedule"
+      body: "ex1) 月-金 && 9-21<br/>ex2) 月,水,金 && 9-12,13-20<br/>ex3) 9-21"
+      value: self.model.run_schedule() || "月-金 && 10-22"
+    .done (val) ->
+        model.update_schedule(val)
+        .done ->
+            model.update().done ->
+              self.update_view()
+        .fail (reason) ->
+            show_message(reason, "failure") if reason
 
   self.update_view = ->
     data = self.model.data
@@ -169,18 +309,26 @@ AWSSC.PanelView = (model) ->
     self.content.find(".ec2-panel-item-name").html(data.tags.Name)
     self.content.find(".ec2-panel-item-type").html(data.instance_type).addClass(data.instance_type.replace(".", ""))
     self.content.find(".ec2-panel-item-launch-time").html(launch_time.toLocaleString())
-    self.content.find(".ec2-panel-item-status").html(data.status).addClass(data.status)
+    self.content.find(".ec2-panel-item-schedule").html(self.model.run_schedule() || "-")
+    item_status = self.content.find(".ec2-panel-item-status").html(data.status).removeClass("running stopped")
     if model.is_running()
       self.content.find(".ec2-panel-item-cost").html("#{hours}H × #{cost_per_hour}$ ≒ #{cost}$")
       self.content.find(".ec2-start-stop").html("STOP")
-    else
+      item_status.addClass(data.status)
+    else if model.is_stopped()
       self.content.find(".ec2-start-stop").html("START")
+      item_status.addClass(data.status)
+    else
+      self.content.find(".ec2-start-stop").append('<i class="icon icon-spinner">')
+
     unless model.can_start_stop()
-      self.content.find(".ec2-start-stop").hide()
-
-
-
-
+      start_stop_btn.hide()
+      edit_schedule_btn.hide()
+      lock_unlock_btn.html('<i class="icon icon-hand-right"> <i class="icon icon-unlock">')
+    else
+      start_stop_btn.show()
+      edit_schedule_btn.show()
+      lock_unlock_btn.html('<i class="icon icon-hand-right"> <i class="icon icon-lock">')
 
   self.reload = ->
     self.model.update().done (response) ->

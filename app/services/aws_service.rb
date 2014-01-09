@@ -3,13 +3,27 @@ require 'aws'
 
 class AWSService
   attr_reader :opts
+  TAG_CAN_OPERATION_KEY = 'APIStartStop'
+  TAG_CAN_OPERATION_YES = 'YES'
+  TAG_CAN_OPERATION_NO  = 'NO'
 
-  config = EnvConfig.new
-  AWS.config(:access_key_id => config['secret']['aws_access_key_id'], :secret_access_key => config['secret']['aws_secret_access_key'])
+  TAG_RUN_SCHEDULE_KEY  = 'APIRunSchedule'
 
   def initialize(opts = {})
+    @config = EnvConfig.new
     @opts = opts
     @opts[:region] ||= 'ap-southeast-1'
+    @opts[:account_name] ||= 'YumemiDev'
+    setup(@opts[:account_name])
+  end
+
+  def setup(account_name)
+    @account = @config['aws_account'][account_name.to_s]
+    AWS.config(:access_key_id => @account['aws_access_key_id'], :secret_access_key => @account['aws_secret_access_key'])
+  end
+
+  def check_admin_password(password)
+    @account['admin_password'] == password.to_s
   end
 
   def regions
@@ -59,6 +73,32 @@ class AWSService
       message = "NG. status is #{status}, not 'running'."
     end
     return {:message => message}
+  end
+
+  def change_operation_tag(ec2_id, to_enable)
+    ec2 = ec2_instance(ec2_id)
+    tag = ec2.add_tag(TAG_CAN_OPERATION_KEY, {:value => to_enable ? TAG_CAN_OPERATION_YES : TAG_CAN_OPERATION_NO})
+    if tag
+      ret = {:success => true, :message => 'OK'}
+    else
+      ret = {:success => false, :message => tag}
+    end
+    ret
+  end
+
+  def lock(ec2_id)
+    change_operation_tag(ec2_id, false)
+  end
+
+  def unlock(ec2_id)
+    change_operation_tag(ec2_id, true)
+  end
+
+  def update_schedule(ec2_id, schedule)
+    plan = TimePlan.parse(schedule)
+    ec2 = ec2_instance(ec2_id)
+    ec2.add_tag(TAG_RUN_SCHEDULE_KEY, {:value => schedule})
+    return {:success => true, :message => 'OK'}
   end
 end
 

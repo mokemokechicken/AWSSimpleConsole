@@ -9,8 +9,11 @@ AWSSimpleConsole::Application.routes.draw do
 
   get 'api/ec2/' => 'api/ec2#index'
   get 'api/ec2/:ec2_id' => 'api/ec2#show'
-  post 'api/ec2/:ec2_id/start' => 'api/ec2#start'
-  post 'api/ec2/:ec2_id/stop'  => 'api/ec2#stop'
+  post 'api/ec2/:ec2_id/start'  => 'api/ec2#start'
+  post 'api/ec2/:ec2_id/stop'   => 'api/ec2#stop'
+  post 'api/ec2/:ec2_id/lock'   => 'api/ec2#lock'
+  post 'api/ec2/:ec2_id/unlock' => 'api/ec2#unlock'
+  post 'api/ec2/:ec2_id/schedule' => 'api/ec2#schedule'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

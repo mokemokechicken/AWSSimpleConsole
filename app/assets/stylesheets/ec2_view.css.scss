@@ -35,6 +35,7 @@
 
 .ec2-panel-item-name {
   text-align: center;
+  margin-left: 3px;
 }
 
 .ec2-panel-item-type {
@@ -46,6 +47,10 @@
 }
 
 .ec2-panel-item-status {
+  text-align: center;
+}
+
+.ec2-panel-item-schedule {
   text-align: center;
 }
 
