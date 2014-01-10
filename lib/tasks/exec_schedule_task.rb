@@ -1,5 +1,5 @@
 # coding: utf-8
-require "config"
+require 'config'
 
 
 class Tasks::ExecScheduleTask
