@@ -11,6 +11,7 @@ $.wait = (duration) ->
 AWSSC.EC2 = (opts) ->
   self = {}
   self.opts = opts
+  self.account_name = opts.account_name
 
   canvas = $("##{opts.canvas}")
   panelVC_list = []
@@ -19,7 +20,7 @@ AWSSC.EC2 = (opts) ->
   self.show_ec2_instances = (regions) ->
     regions ?= region_list
     for region in regions
-      $.get("/api/ec2/?region=#{region}").done (response) ->
+      $.get("/api/ec2/?region=#{region}&account_name=#{self.account_name}").done (response) ->
         if response.ec2_list && response.ec2_list.length > 0
           rc = $("<div>").append($("<h1>").html(response.region))
           canvas.append(rc)
@@ -43,11 +44,13 @@ AWSSC.EC2Model = (data) ->
   self = {}
   self.data = data
   self.region = data.region
-  api_params = -> region: self.region
+  self.account_name = data.account_name
+  api_params = ->
+    region: self.region
+    account_name: self.account_name
   polling_sec = 10000
 
   self.is_running = -> self.data.status == "running"
-
   self.is_stopped = -> self.data.status == "stopped"
 
   self.can_start_stop = ->
@@ -202,12 +205,14 @@ AWSSC.PanelView = (model) ->
   self.model = model
   name = model.data.tags.Name
   # construct view and controll
+  info_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-info-sign"></i></button>')
   update_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-refresh"></i></button>')
   start_stop_btn = $('<button type="button" class="btn btn-default ec2-start-stop">')
   lock_unlock_btn = $('<button type="button" class="btn btn-small"></button>')
   edit_schedule_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-edit"> <i class="icon icon-calendar"></button>')
   schedule_element = $('<span class="ec2-panel-item-schedule">')
   self.content = $('<div class="ec2-panel-item">')
+  .append(info_btn)
   .append(update_btn)
   .append(edit_schedule_btn)
   .append(lock_unlock_btn)
@@ -247,6 +252,19 @@ AWSSC.PanelView = (model) ->
     AWSSC.ModalDialog().show
       title: title
       body: msg
+
+  info_btn.on "click", ->
+    data = self.model.data
+    info = ["",
+      "ID: #{data.ec2_id}"
+      "Name: #{name}"
+      "type: #{data.instance_type}"
+      "private IP: #{data.private_ip}"
+      "public IP: #{data.public_ip}"
+      "status: #{data.status}"
+      "tags: <ul><li>#{("#{k}: #{v}" for k,v of data.tags).join("</li><li>")}</li></ul>"
+    ].join("<br>")
+    show_message(info, name)
 
   start_stop_btn.on "click", ->
     if model.is_running()

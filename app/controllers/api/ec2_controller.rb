@@ -2,14 +2,14 @@ class Api::Ec2Controller < ApplicationController
   before_filter :authenticate_user!
 
   def init_aws_service(params)
-    AWSService.new(:region => params[:region])
+    AWSService.new(:region => params[:region], :account_name => params[:account_name])
   end
 
   def index
     aws = init_aws_service(params)
     cache_expire = params[:no_cache] ? 30 : nil
     ec2_list = aws.ec2_list_as_model(cache_expire)
-    render :json => {:ec2_list => ec2_list, :region => params[:region]}
+    render :json => {:ec2_list => ec2_list, :region => params[:region], :account_name => aws.account_name}
   end
 
   def show

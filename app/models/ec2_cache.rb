@@ -21,6 +21,8 @@ class Ec2Cache < ActiveRecord::Base
     self.launch_time = ec2.launch_time
     self.instance_type = ec2.instance_type
     self.status = ec2.status
+    self.public_ip = ec2.public_ip_address
+    self.private_ip = ec2.private_ip_address
     save!
     self
   end

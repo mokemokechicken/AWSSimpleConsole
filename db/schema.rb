@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140110030203) do
+ActiveRecord::Schema.define(version: 20140110054449) do
 
   create_table "ec2_caches", force: true do |t|
     t.string   "ec2_id"
@@ -21,6 +21,8 @@ ActiveRecord::Schema.define(version: 20140110030203) do
     t.datetime "launch_time"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "public_ip"
+    t.string   "private_ip"
   end
 
   create_table "users", force: true do |t|

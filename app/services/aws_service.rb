@@ -26,6 +26,10 @@ class AWSService
     @account['admin_password'] == password.to_s
   end
 
+  def account_name
+    @opts[:account_name]
+  end
+
   def regions
     @regions ||= AWS.regions
   end

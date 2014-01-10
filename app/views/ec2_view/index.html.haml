@@ -1,6 +1,19 @@
 .row-fluid
   .span1
   .span10
+    .navbar
+      .btn-group
+        %button.btn.btn-primary.dropdown-toggle(type="button" data-toggle="dropdown")
+          AWS Account
+          %span.caret
+        %ul.dropdown-menu(role="menu")
+          - @account_name_list.each do |account_name|
+            %li
+              %a(href="?account_name=#{account_name}")= account_name
+
+.row-fluid
+  .span1
+  .span10
     %input#reload(type="button" value="更新")
     %input#toggle_hide_stop(type="button" value="stoppedを隠す/表示")
     %div#main
@@ -11,4 +24,5 @@
       canvas: "main"
       reload: "reload"
       toggle_hide_stop: "toggle_hide_stop"
+      account_name: "#{@account_name}"
     ec2.show_ec2_instances()
