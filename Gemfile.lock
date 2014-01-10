@@ -36,6 +36,7 @@ GEM
       json (~> 1.4)
       nokogiri (>= 1.4.4)
       uuidtools (~> 2.1)
+    bcrypt-ruby (3.1.2)
     builder (3.1.4)
     coffee-rails (4.0.1)
       coffee-script (>= 2.2.0)
@@ -45,6 +46,15 @@ GEM
       execjs
     coffee-script-source (1.6.3)
     commonjs (0.2.7)
+    devise (3.2.2)
+      bcrypt-ruby (~> 3.0)
+      orm_adapter (~> 0.1)
+      railties (>= 3.2.6, < 5)
+      thread_safe (~> 0.1)
+      warden (~> 1.2.3)
+    devise_ldap_authenticatable (0.8.1)
+      devise (>= 3.0)
+      net-ldap (>= 0.3.1, < 0.6.0)
     diff-lcs (1.2.5)
     erb2haml (0.1.5)
       html2haml
@@ -99,6 +109,7 @@ GEM
     net-ldap (0.3.1)
     nokogiri (1.6.1)
       mini_portile (~> 0.5.0)
+    orm_adapter (0.5.0)
     polyglot (0.3.3)
     puma (2.7.1)
       rack (>= 1.1, < 2.0)
@@ -178,6 +189,8 @@ GEM
       execjs (>= 0.3.0)
       json (>= 1.8.0)
     uuidtools (2.1.4)
+    warden (1.2.3)
+      rack (>= 1.0)
 
 PLATFORMS
   ruby
@@ -186,6 +199,7 @@ DEPENDENCIES
   activeldap
   aws-sdk
   coffee-rails (~> 4.0.0)
+  devise_ldap_authenticatable (~> 0.8.1)
   erb2haml
   execjs
   font-awesome-less

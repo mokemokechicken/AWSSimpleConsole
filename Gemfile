@@ -64,3 +64,6 @@ gem 'net-ldap'
 gem 'rspec-rails'
 
 gem 'puma'
+
+gem 'devise_ldap_authenticatable', '~> 0.8.1'
+

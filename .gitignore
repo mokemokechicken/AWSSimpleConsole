@@ -18,6 +18,7 @@
 /tmp
 
 env.json
+ldap.yml
 
 .idea
 

@@ -1,4 +1,6 @@
 class Api::Ec2Controller < ApplicationController
+  before_filter :authenticate_user!
+
   def init_aws_service(params)
     AWSService.new(:region => params[:region])
   end
