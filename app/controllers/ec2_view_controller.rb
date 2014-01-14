@@ -1,3 +1,5 @@
+require 'config'
+
 class Ec2ViewController < ApplicationController
   before_filter :authenticate_user!
 

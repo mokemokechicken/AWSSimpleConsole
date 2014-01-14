@@ -227,8 +227,8 @@ AWSSC.PanelView = (model) ->
 
   confirm_action = (msg) ->
     dfd = $.Deferred()
-    a = Math.floor(Math.random() * 100)
-    b = Math.floor(Math.random() * 100)
+    a = Math.floor(Math.random() * 40) + 10
+    b = Math.floor(Math.random() * 40) + 10
     AWSSC.ModalPrompt().show
       title: "Are you sure?"
       body: "#{msg}<br/>#{a} + #{b} == ??"
