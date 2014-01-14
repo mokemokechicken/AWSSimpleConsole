@@ -13,7 +13,7 @@ class AWSService
     @config = EnvConfig.new
     @opts = opts
     @opts[:region] ||= 'ap-southeast-1'
-    @opts[:account_name] ||= 'YumemiDev'
+    @opts[:account_name] = @opts[:account_name].to_s.empty? ? 'YumemiDev' : @opts[:account_name]
     setup(@opts[:account_name])
   end
 
