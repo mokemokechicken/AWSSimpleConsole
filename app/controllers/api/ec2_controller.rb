@@ -8,7 +8,7 @@ class Api::Ec2Controller < ApplicationController
   def index
     aws = init_aws_service(params)
     cache_expire = params[:no_cache] ? 30 : nil
-    ec2_list = aws.ec2_list_as_model(cache_expire)
+    ec2_list = aws.ec2_list_as_model(cache_expire).sort_by {|x| x.tags['Name'].to_s.strip}
     render :json => {:ec2_list => ec2_list, :region => params[:region], :account_name => aws.account_name}
   end
 
@@ -56,8 +56,9 @@ class Api::Ec2Controller < ApplicationController
 
   def schedule
     ec2_id = params[:ec2_id]
+    use_stop_only = params[:use_stop_only].to_s == '1'
     aws = init_aws_service(params)
-    ret = aws.update_schedule(ec2_id, params[:schedule])
+    ret = aws.update_schedule(ec2_id, params[:schedule], use_stop_only)
     render :json => {:success => ret[:success], :message => ret[:message]}
   end
 end

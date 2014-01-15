@@ -39,7 +39,6 @@ AWSSC.EC2 = (opts) ->
 
   $("##{opts.filter_text}").on "change", (e) ->
     filterText = e.target.value
-    console.log(filterText)
     for panelVC in panelVC_list
       panelVC.filter_instance(filterText)
 
@@ -61,6 +60,9 @@ AWSSC.EC2Model = (data) ->
 
   self.can_start_stop = ->
     self.data.tags['APIStartStop'] == 'YES'
+
+  self.use_stop_only = ->
+    self.data.tags['APIAutoOperationMode'] == 'STOP'
 
   self.run_schedule = ->
     self.data.tags['APIRunSchedule']
@@ -123,10 +125,11 @@ AWSSC.EC2Model = (data) ->
   self.unlock_operation = (password) ->
     lock_unlock_operation("unlock", password)
 
-  self.update_schedule = (val) ->
+  self.update_schedule = (val, use_stop_only) ->
     dfd = $.Deferred()
     params = api_params()
     params.schedule = val
+    params.use_stop_only = if use_stop_only then "1" else "0"
     post_api(dfd, "schedule", params).done (response) ->
       if response.success
         dfd.resolve()
@@ -197,6 +200,8 @@ AWSSC.ModalPrompt = ->
       dialog.dialog("close")
 
     dialog.append($("<div>").append(textInput))
+    if opts.extra
+      dialog.append(opts.extra)
     $("body").append(dialog)
     dialog.dialog
       title: opts.title
@@ -221,6 +226,7 @@ AWSSC.PanelView = (model) ->
   lock_unlock_btn = $('<button type="button" class="btn btn-small"></button>')
   edit_schedule_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-edit"> <i class="icon icon-calendar"></button>')
   schedule_element = $('<span class="ec2-panel-item-schedule">')
+  auto_mode_element = $('<div class="ec2-panel-item-auto-mode">')
   filter_text = null
   hide_stopped = null
   self.content = $('<div class="ec2-panel-item">')
@@ -234,6 +240,7 @@ AWSSC.PanelView = (model) ->
   .append($('<div class="ec2-panel-item-status">'))
   .append($('<span>').html("Schedule: "))
   .append(schedule_element)
+  .append(auto_mode_element)
   .append($("<div>").append(start_stop_btn))
   .append($('<div class="ec2-panel-item-cost">').html("-"))
 
@@ -316,13 +323,19 @@ AWSSC.PanelView = (model) ->
       .fail (reason) ->
         show_message(reason, "failure") if reason
 
+
   edit_schedule_btn.on "click", ->
+    checkbox = $('<input type="checkbox">')
+    if model.use_stop_only()
+      checkbox.prop("checked", true)
+    extra = $('<div>').append(checkbox).append($("<span> 自動STARTは行わない</span>"))
     AWSSC.ModalPrompt().show
       title: "Enter Schedule"
       body: "ex1) 月-金 && 9-21<br/>ex2) 月,水,金 && 9-12,13-20<br/>ex3) 9-21"
       value: self.model.run_schedule() || "月-金 && 10-22"
+      extra: extra
     .done (val) ->
-        model.update_schedule(val)
+        model.update_schedule(val, checkbox.prop("checked"))
         .done ->
             model.update().done ->
               self.update_view()
@@ -355,9 +368,11 @@ AWSSC.PanelView = (model) ->
       start_stop_btn.hide()
       edit_schedule_btn.hide()
       lock_unlock_btn.html('<i class="icon icon-hand-right"> <i class="icon icon-unlock">')
+      auto_mode_element.html("")
     else
       start_stop_btn.show()
       edit_schedule_btn.show()
+      auto_mode_element.html(if self.model.use_stop_only() then "AUTO Stop ONLY" else "AUTO Stop & Start")
       lock_unlock_btn.html('<i class="icon icon-hand-right"> <i class="icon icon-lock">')
     check_hide_panel()
 

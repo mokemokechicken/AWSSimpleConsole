@@ -14,10 +14,10 @@
 .row-fluid
   .span1
   .span10
-    .input-group
-      %input#reload(type="button" value="全て更新")
-      %input#toggle_hide_stop(type="button" value="stoppedを隠す/表示")
-      %input.form-control#filter_text(type="text" size="20" placeholder="filter text")
+    .input-group.top-controll
+      %button.top-controll.btn#reload(type="button") 全て更新
+      %button.top-controll.btn#toggle_hide_stop(type="button") stoppedを隠す/表示
+      %input.top-controll.form-control#filter_text(type="text" size="20" placeholder="filter text")
     %div#main
 
 :coffee

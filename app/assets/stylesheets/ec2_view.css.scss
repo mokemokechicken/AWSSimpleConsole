@@ -10,6 +10,12 @@
   border-radius: $radius;
 }
 
+.top-controll {
+  vertical-align: top;
+  padding: 5px;
+}
+
+
 .hidden {
   display: none;
 }
@@ -51,6 +57,10 @@
 }
 
 .ec2-panel-item-schedule {
+  text-align: center;
+}
+
+.ec2-panel-item-auto-mode {
   text-align: center;
 }
 

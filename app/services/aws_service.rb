@@ -9,6 +9,10 @@ class AWSService
 
   TAG_RUN_SCHEDULE_KEY  = 'APIRunSchedule'
 
+  TAG_AUTO_OPERATION_MODE_KEY = 'APIAutoOperationMode'
+  TAG_AUTO_OPERATION_MODE_STOP_ONLY = 'STOP'
+  TAG_AUTO_OPERATION_MODE_STOP_START = 'STOP,START'
+
   def initialize(opts = {})
     @config = EnvConfig.new
     @opts = opts
@@ -98,10 +102,27 @@ class AWSService
     change_operation_tag(ec2_id, true)
   end
 
-  def update_schedule(ec2_id, schedule)
+  def change_auto_operation_mode(ec2_id, mode=:stop_start)
+    ec2 = ec2_instance(ec2_id)
+    case mode
+      when :stop_only
+        tag = ec2.add_tag(TAG_AUTO_OPERATION_MODE_KEY, {:value => TAG_AUTO_OPERATION_MODE_STOP_ONLY})
+      when :stop_start
+        tag = ec2.add_tag(TAG_AUTO_OPERATION_MODE_KEY, {:value => TAG_AUTO_OPERATION_MODE_STOP_START})
+    end
+    if tag
+      ret = {:success => true, :message => 'OK'}
+    else
+      ret = {:success => false, :message => tag}
+    end
+    ret
+  end
+
+  def update_schedule(ec2_id, schedule, use_stop_only=false)
     plan = TimePlan.parse(schedule)
     ec2 = ec2_instance(ec2_id)
     ec2.add_tag(TAG_RUN_SCHEDULE_KEY, {:value => schedule})
+    change_auto_operation_mode(ec2_id, use_stop_only ? :stop_only : :stop_start)
     return {:success => true, :message => 'OK'}
   end
 end
