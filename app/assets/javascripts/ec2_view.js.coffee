@@ -37,6 +37,12 @@ AWSSC.EC2 = (opts) ->
     for panelVC in panelVC_list
       panelVC.toggle_hide_stop(hide_stopped)
 
+  $("##{opts.filter_text}").on "change", (e) ->
+    filterText = e.target.value
+    console.log(filterText)
+    for panelVC in panelVC_list
+      panelVC.filter_instance(filterText)
+
   return self
 
 AWSSC.EC2Model = (data) ->
@@ -67,14 +73,14 @@ AWSSC.EC2Model = (data) ->
         console.log response
 
   check_state = (dfd, ok_func, ng_func) ->
-    $.wait(polling_sec).done ->
-      self.update().done ->
-        if ok_func()
-          dfd.resolve()
-        else if ng_func()
-          dfd.fail()
-        else
-          dfd.notify()
+    self.update().done ->
+      if ok_func()
+        dfd.resolve()
+      else if ng_func()
+        dfd.fail()
+      else
+        dfd.notify()
+        $.wait(polling_sec).done ->
           check_state(dfd, ok_func, ng_func)
 
   post_api = (dfd, op_type, params=api_params()) ->
@@ -157,6 +163,10 @@ AWSSC.PanelViewController = (opts) ->
     canvas.append(panel.content)
     panel.update_view()
 
+  self.filter_instance = (filterText) ->
+    for panel in panel_list
+      panel.filter(filterText)
+
   return self
 
 AWSSC.ModalDialog = ->
@@ -211,6 +221,8 @@ AWSSC.PanelView = (model) ->
   lock_unlock_btn = $('<button type="button" class="btn btn-small"></button>')
   edit_schedule_btn = $('<button type="button" class="btn btn-small"><i class="icon icon-edit"> <i class="icon icon-calendar"></button>')
   schedule_element = $('<span class="ec2-panel-item-schedule">')
+  filter_text = null
+  hide_stopped = null
   self.content = $('<div class="ec2-panel-item">')
   .append(info_btn)
   .append(update_btn)
@@ -347,18 +359,36 @@ AWSSC.PanelView = (model) ->
       start_stop_btn.show()
       edit_schedule_btn.show()
       lock_unlock_btn.html('<i class="icon icon-hand-right"> <i class="icon icon-lock">')
+    check_hide_panel()
+
+  check_hide_panel = ->
+    willShow = true
+    if self.model.data.status == 'stopped' && hide_stopped
+      willShow = false
+    if willShow && filter_text
+      willShow = false
+      ft = filter_text.toLocaleLowerCase()
+      for k, v of self.model.data.tags
+        if v && v.toLocaleLowerCase().indexOf(ft) >= 0
+          willShow = true
+          break
+    if willShow
+      self.content.show()
+    else
+      self.content.hide()
 
   self.reload = ->
     self.model.update().done (response) ->
       self.update_view()
 
-  self.toggle_hide_stop = (hide_stopped) ->
-    if self.model.data.status == 'stopped' && hide_stopped
-      self.content.hide()
-    if !hide_stopped
-      self.content.show()
+  self.toggle_hide_stop = (hideStopped) ->
+    hide_stopped = hideStopped
+    check_hide_panel()
 
 
+  self.filter = (filterText) ->
+    filter_text = filterText
+    check_hide_panel()
 
 
   return self
