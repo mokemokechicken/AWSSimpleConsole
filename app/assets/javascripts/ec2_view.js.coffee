@@ -25,7 +25,9 @@ AWSSC.EC2 = (opts) ->
           rc = $("<div>").append($("<h1>").html(response.region))
           canvas.append(rc)
           panelVC = AWSSC.PanelViewController(canvas: rc)
-          panelVC.add_models(response.ec2_list, response.region)
+          panelVC.add_models response.ec2_list,
+            region: response.region
+            account_name: self.account_name
           panelVC_list.push(panelVC)
 
   $("##{opts.reload}").on "click", ->
@@ -145,9 +147,10 @@ AWSSC.PanelViewController = (opts) ->
   canvas = opts.canvas
   panel_list = []
 
-  self.add_models = (ec2_list, region) ->
+  self.add_models = (ec2_list, opts) ->
     for ec2 in ec2_list
-      ec2.region = region
+      ec2.region = opts.region
+      ec2.account_name = opts.account_name
       ec2model = AWSSC.EC2Model(ec2)
       self.add(ec2model)
 
@@ -305,7 +308,8 @@ AWSSC.PanelView = (model) ->
       .always ->
         self.update_view()
 
-  update_btn.on "click", self.reload
+  update_btn.on "click", ->
+    self.reload()
 
   lock_unlock_btn.on "click", ->
     if self.model.can_start_stop()
