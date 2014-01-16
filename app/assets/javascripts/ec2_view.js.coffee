@@ -340,7 +340,7 @@ AWSSC.PanelView = (model) ->
         .fail (reason) ->
             show_message(reason, "failure") if reason
 
-  self.check_need_update = (expire_span=3600) ->
+  self.check_need_update = (expire_span=86400) ->
     updated_time = new Date(self.model.data.updated_at)
     now = new Date()
     if (now - updated_time)/1000 > expire_span
