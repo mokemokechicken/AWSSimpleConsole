@@ -7,7 +7,7 @@ class Api::Ec2Controller < ApplicationController
 
   def index
     aws = init_aws_service(params)
-    cache_expire = params[:no_cache] ? 30 : nil
+    cache_expire = params[:no_cache] ? 100000000000000 : nil
     ec2_list = aws.ec2_list_as_model(cache_expire).sort_by {|x| x.tags['Name'].to_s.strip}
     render :json => {:ec2_list => ec2_list, :region => params[:region], :account_name => aws.account_name}
   end

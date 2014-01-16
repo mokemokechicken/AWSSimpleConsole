@@ -165,6 +165,7 @@ AWSSC.PanelViewController = (opts) ->
     panel_list.push(panel)
     canvas.append(panel.content)
     panel.update_view()
+    panel.check_need_update()
 
   self.filter_instance = (filterText) ->
     for panel in panel_list
@@ -262,7 +263,6 @@ AWSSC.PanelView = (model) ->
     dfd.promise()
 
   confirm_admin = (msg) ->
-    # prompt("#{msg}\nPlease Input Admin Password")
     AWSSC.ModalPrompt().show
       title: "Admin Auth"
       body: "#{msg}<br/>Please Input Admin Password"
@@ -305,9 +305,7 @@ AWSSC.PanelView = (model) ->
       .always ->
         self.update_view()
 
-  update_btn.on "click", ->
-    self.model.update().done ->
-      self.update_view()
+  update_btn.on "click", self.reload
 
   lock_unlock_btn.on "click", ->
     if self.model.can_start_stop()
@@ -341,6 +339,12 @@ AWSSC.PanelView = (model) ->
               self.update_view()
         .fail (reason) ->
             show_message(reason, "failure") if reason
+
+  self.check_need_update = (expire_span=3600) ->
+    updated_time = new Date(self.model.data.updated_at)
+    now = new Date()
+    if (now - updated_time)/1000 > expire_span
+      self.model.update().done -> self.update_view()
 
   self.update_view = ->
     data = self.model.data
@@ -393,8 +397,7 @@ AWSSC.PanelView = (model) ->
       self.content.hide()
 
   self.reload = ->
-    self.model.update().done (response) ->
-      self.update_view()
+    self.model.update().done self.update_view
 
   self.toggle_hide_stop = (hideStopped) ->
     hide_stopped = hideStopped
