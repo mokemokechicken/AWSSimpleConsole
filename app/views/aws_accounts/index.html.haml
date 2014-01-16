@@ -1,0 +1,25 @@
+%h1 Listing aws_accounts
+
+%table.table
+  %tr
+    %th Name
+    %th Aws access key
+    %th Aws secret access key
+    %th Admin password
+    %th
+    %th
+    %th
+
+  - @aws_accounts.each do |aws_account|
+    %tr
+      %td= aws_account.name
+      %td= aws_account.aws_access_key_id
+      %td= aws_account.aws_secret_access_key
+      %td= aws_account.admin_password
+      %td= link_to 'Show', aws_account, :class => 'btn'
+      %td= link_to 'Edit', edit_aws_account_path(aws_account), :class => 'btn'
+      %td= link_to 'Destroy', aws_account, :method => :delete, :data => { :confirm => 'Are you sure?' }, :class => 'btn'
+
+%br
+
+= link_to 'New Aws account', new_aws_account_path, :class => 'btn btn-lg'

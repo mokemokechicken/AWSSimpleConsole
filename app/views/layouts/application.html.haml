@@ -6,6 +6,20 @@
     = javascript_include_tag "application", "data-turbolinks-track" => true
     = csrf_meta_tags
   %body
-    %p.notice= notice
-    %p.alert= alert
-    = yield
+    .navbar
+      .navbar-inner
+        .container-fluid
+          %ul.nav
+            %li
+              = link_to 'EC2 List', '/'
+          %ul.nav.pull-right
+            %li
+              = link_to 'AWS Account', aws_accounts_path
+    .row-fluid
+      .span1
+      .span10
+        - if notice
+          %p.notice= notice
+        - if alert
+          %p.alert= alert
+        = yield

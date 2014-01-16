@@ -11,7 +11,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140110054449) do
+ActiveRecord::Schema.define(version: 20140116074221) do
+
+  create_table "aws_accounts", force: true do |t|
+    t.string   "name"
+    t.string   "aws_access_key_id"
+    t.string   "aws_secret_access_key"
+    t.string   "admin_password"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "aws_accounts", ["name"], name: "index_aws_accounts_on_name", unique: true
 
   create_table "ec2_caches", force: true do |t|
     t.string   "ec2_id"

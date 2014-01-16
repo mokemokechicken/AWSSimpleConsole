@@ -1,0 +1,15 @@
+%p
+  %b Name:
+  = @aws_account.name
+%p
+  %b Aws access key:
+  = @aws_account.aws_access_key_id
+%p
+  %b Aws secret access key:
+  = @aws_account.aws_secret_access_key
+%p
+  %b Admin password:
+  = @aws_account.admin_password
+
+= link_to 'Edit', edit_aws_account_path(@aws_account), :class => 'btn'
+= link_to 'Back', aws_accounts_path, :class => 'btn'

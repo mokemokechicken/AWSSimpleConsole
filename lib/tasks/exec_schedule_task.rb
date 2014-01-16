@@ -1,6 +1,4 @@
 # coding: utf-8
-require 'config'
-
 
 class Tasks::ExecScheduleTask
   def self.execute
@@ -9,10 +7,9 @@ class Tasks::ExecScheduleTask
 
   def run
     Rails.logger.info('ExecScheduleTask Start')
-    @config = EnvConfig.new
     @update_list = []
-    @config['aws_account'].keys.each do |account_name|
-      process_account(account_name)
+    AwsAccount.all.each do |account|
+      process_account(account.name)
     end
     @update_list.each do |ec2|
       Rails.logger.info("=============================== Resync #{ec2.id}: #{ec2.tags['Name']} =============================")

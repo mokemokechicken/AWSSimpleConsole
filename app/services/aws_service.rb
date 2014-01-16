@@ -17,17 +17,17 @@ class AWSService
     @config = EnvConfig.new
     @opts = opts
     @opts[:region] ||= 'ap-southeast-1'
-    @opts[:account_name] = @opts[:account_name].to_s.empty? ? 'YumemiDev' : @opts[:account_name]
+    @opts[:account_name] = @opts[:account_name].to_s.empty? ? AwsAccount.all.first.name : @opts[:account_name]
     setup(@opts[:account_name])
   end
 
   def setup(account_name)
-    @account = @config['aws_account'][account_name.to_s]
-    AWS.config(:access_key_id => @account['aws_access_key_id'], :secret_access_key => @account['aws_secret_access_key'])
+    @account = AwsAccount.find_by_name(account_name)
+    AWS.config(:access_key_id => @account.aws_access_key_id, :secret_access_key => @account.aws_secret_access_key)
   end
 
   def check_admin_password(password)
-    @account['admin_password'] == password.to_s
+    @account.admin_password == password.to_s
   end
 
   def account_name
@@ -119,7 +119,7 @@ class AWSService
   end
 
   def update_schedule(ec2_id, schedule, use_stop_only=false)
-    plan = TimePlan.parse(schedule)
+    TimePlan.parse(schedule)
     ec2 = ec2_instance(ec2_id)
     ec2.add_tag(TAG_RUN_SCHEDULE_KEY, {:value => schedule})
     change_auto_operation_mode(ec2_id, use_stop_only ? :stop_only : :stop_start)
