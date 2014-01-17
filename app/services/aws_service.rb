@@ -42,6 +42,10 @@ class AWSService
     AWS::EC2.new(:region => @opts[:region])
   end
 
+  def elb
+    @elb ||= AWS::ELB.new(:region => @opts[:region])
+  end
+
   def ec2_list
     ec2.instances.to_a
   end
@@ -65,6 +69,7 @@ class AWSService
     message = 'OK'
     if status == :stopped
       ec2.start
+      re_register_to_elb(ec2.id)
     else
       message = "NG. status is #{status}, not 'stopped'."
     end
@@ -81,6 +86,17 @@ class AWSService
       message = "NG. status is #{status}, not 'running'."
     end
     return {:message => message}
+  end
+
+  def re_register_to_elb(ec2_id)
+    elb.load_balancers.each do |lb|
+      instance_id_list = lb.instances.to_a.map{|x| x.id}
+      if instance_id_list.include?(ec2_id)
+        ec2 = lb.instances[ec2_id]
+        ec2.remove_from_load_balancer
+        lb.instances.register(ec2)
+      end
+    end
   end
 
   def change_operation_tag(ec2_id, to_enable)

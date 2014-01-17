@@ -54,16 +54,29 @@ IAM Role の 設定
             ]
         },
         {
-           "Sid": "Stmt1386654386000",
-           "Effect": "Allow",
-           "Action": [
-              "ec2:CreateTags",
-              "ec2:DeleteTags"
+            "Sid": "Stmt1386654386000",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateTags",
+                "ec2:DeleteTags"
             ],
             "Resource": [
-               "*"
-             ]
+                "*"
+            ]
+        },
+        {
+            "Sid": "Stmt1389937836000",
+            "Effect": "Allow",
+            "Action": [
+                "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                "elasticloadbalancing:DescribeLoadBalancers",
+                "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+            ],
+            "Resource": [
+                "*"
+            ]
         }
     ]
-}```
+}
+```
 

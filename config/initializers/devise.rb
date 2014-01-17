@@ -14,7 +14,7 @@ Devise.setup do |config|
   # ==> Advanced LDAP Configuration
   # default is Proc.new() {|attribute, login, ldap| "#{attribute}=#{login},#{ldap.base}" }
   # see: https://github.com/cschiewek/devise_ldap_authenticatable
-  config.ldap_auth_username_builder = Proc.new() {|attribute, login, ldap| login}
+  config.ldap_auth_username_builder = Proc.new() {|attribute, login, ldap| attribute ? "#{attribute}=#{login},#{ldap.base}" : login}
 
   # The secret key used by Devise. Devise uses this key to generate
   # random tokens. Changing this key will render invalid all existing
