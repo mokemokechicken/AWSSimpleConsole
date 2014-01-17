@@ -4,6 +4,7 @@ class Ec2ViewController < ApplicationController
   def index
     @account_list = AwsAccount.all
     account = @account_list.first
-    @account_name = params[:account_name] || (account && account.name)
+    @account_name = params[:account_name]
+    @default_account_name = (account && account.name).to_s
   end
 end

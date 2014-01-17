@@ -1,6 +1,6 @@
 .nav.navbar-default
   .btn-group
-    %button.btn.btn-primary.dropdown-toggle(type="button" data-toggle="dropdown")
+    %button.btn.btn-primary.dropdown-toggle#account_dropdown(type="button" data-toggle="dropdown")
       AWS Account
       %span.caret
     %ul.dropdown-menu(role="menu")
@@ -23,4 +23,6 @@
       toggle_hide_stop: "toggle_hide_stop"
       filter_text: "filter_text"
       account_name: "#{@account_name}"
+      default_account_name: "#{@default_account_name}"
+      account_dropdown: "account_dropdown"
     ec2.show_ec2_instances()

@@ -11,11 +11,24 @@ $.wait = (duration) ->
 AWSSC.EC2 = (opts) ->
   self = {}
   self.opts = opts
-  self.account_name = opts.account_name
 
   canvas = $("##{opts.canvas}")
   panelVC_list = []
   hide_stopped = false
+
+  resolve_account_name = (opts) ->
+    localStorage.account_name =
+      if opts.account_name
+        opts.account_name
+      else
+        if localStorage.account_name
+          localStorage.account_name
+        else
+          opts.default_account_name
+    $("##{opts.account_dropdown}").html(localStorage.account_name) if localStorage.account_name
+    localStorage.account_name
+
+  self.account_name = resolve_account_name(opts)
 
   self.show_ec2_instances = (regions) ->
     regions ?= region_list
