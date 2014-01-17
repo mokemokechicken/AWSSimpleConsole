@@ -17,7 +17,7 @@
 /log/*.log
 /tmp
 
-env.json
+env-site.json
 ldap.yml
 
 .idea

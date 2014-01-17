@@ -12,6 +12,58 @@
 * Stop Onlyのスケジュールも指定可能です（消し忘れ防止の用途）
 
 注意
+-----
 * ELBにぶら下げているInstanceはStopしてしまうと、ELBに再度ぶら下げ直す必要があるということを忘れていました。今後ちょっと対応していこうと思います。
 * サービスしているInstanceをUnlockするのは危険なのでやめましょう。
+
+
+IAM Role の 設定
+-------------------
+
+下記のようにしてください。
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1384933267000",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:Describe*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Sid": "Stmt1384933267001",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:RebootInstances",
+                "ec2:StartInstances",
+                "ec2:StopInstances"
+            ],
+            "Condition": {
+                "ForAnyValue:StringEquals": {
+                    "ec2:ResourceTag/APIStartStop": "YES"
+                }
+            },
+            "Resource": [
+                "arn:aws:ec2:*"
+            ]
+        },
+        {
+           "Sid": "Stmt1386654386000",
+           "Effect": "Allow",
+           "Action": [
+              "ec2:CreateTags",
+              "ec2:DeleteTags"
+            ],
+            "Resource": [
+               "*"
+             ]
+        }
+    ]
+}
+```
 

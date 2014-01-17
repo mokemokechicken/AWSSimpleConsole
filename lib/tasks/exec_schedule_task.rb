@@ -1,4 +1,5 @@
 # coding: utf-8
+require 'config'
 
 class Tasks::ExecScheduleTask
   def self.execute
@@ -7,6 +8,7 @@ class Tasks::ExecScheduleTask
 
   def run
     Rails.logger.info('ExecScheduleTask Start')
+    @config = EnvConfig.new
     @update_list = []
     AwsAccount.all.each do |account|
       process_account(account.name)
@@ -42,7 +44,7 @@ class Tasks::ExecScheduleTask
     schedule = ec2.tags[AWSService::TAG_RUN_SCHEDULE_KEY]
     if schedule and is_allow(ec2)
       plan = TimePlan.parse(schedule)
-      now = Time.now
+      now = Time.zone.now.in_time_zone(@config['timezone'])
       Rails.logger.info("==================== ec2: #{ec2.id} #{ec2.tags['Name']} schedule: #{schedule}")
       if plan.include?(now.wday, now.hour)
         mode = ec2.tags[AWSService::TAG_AUTO_OPERATION_MODE_KEY]
