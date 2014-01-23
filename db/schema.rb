@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140116074221) do
+ActiveRecord::Schema.define(version: 20140123014113) do
 
   create_table "aws_accounts", force: true do |t|
     t.string   "name"
@@ -34,6 +34,15 @@ ActiveRecord::Schema.define(version: 20140116074221) do
     t.datetime "updated_at"
     t.string   "public_ip"
     t.string   "private_ip"
+  end
+
+  create_table "operation_logs", force: true do |t|
+    t.string   "username"
+    t.string   "op"
+    t.string   "target"
+    t.string   "options"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "users", force: true do |t|
