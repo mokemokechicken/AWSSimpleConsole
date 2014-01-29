@@ -39,8 +39,25 @@ git clone https://github.com/mokemokechicken/AWSSimpleConsole.git
 cd AWSSimpleConsole
 bundle install --path=vendor/bundle
 bundle exec rake db:migrate
+```
+
+
+Execute on Development Env
+---------------
+
+```
 bundle exec rails server
 ```
+
+Execute on Production Env
+----------
+
+```
+bundle exec rake assets:precompile RAILS_ENV=production
+bundle exec puma -p 10000 -t 8:32 -e production
+```
+
+* `-p 10000` は Listenする port番号です
 
 
 Cron for Scheduled Start/Stop
