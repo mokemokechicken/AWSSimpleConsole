@@ -1,5 +1,5 @@
 class AwsAccountsController < ApplicationController
-  before_filter :authenticate_user!
+  before_filter :authenticate_user! if config[:login_required]
   before_action :set_aws_account, only: [:show, :edit, :update, :destroy]
 
   # GET /aws_accounts

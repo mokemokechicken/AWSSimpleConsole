@@ -1,5 +1,5 @@
 class Ec2ViewController < ApplicationController
-  before_filter :authenticate_user!
+  before_filter :authenticate_user! if config[:login_required]
 
   def index
     @account_list = AwsAccount.all
