@@ -1,5 +1,4 @@
-AWSSC = AWSSC ? {}
-window.AWSSC = AWSSC
+AWSSC = window.AWSSC = window.AWSSC ? {}
 
 $.wait = (duration) ->
   dfd = $.Deferred()
@@ -13,10 +12,99 @@ AWSSC.EC2 = (opts) ->
   self.opts = opts
 
   canvas = $("##{opts.canvas}")
-  panelVC_list = []
-  hide_stopped = false
 
-  resolve_account_name = (opts) ->
+  self.show_ec2_instances = (regions) ->
+    regions ?= region_list
+    for region in regions
+      $.get("/api/ec2/?region=#{region}&account_name=#{self.account_name}").done (response) ->
+        response.account_name = self.account_name
+        viewModel.addRegion(response)
+
+  self.show_message = (msg, title) ->
+    AWSSC.ModalDialog().show
+      title: title
+      body: msg
+
+  self.confirm_admin = (msg) ->
+    AWSSC.ModalPrompt().show
+      title: "Admin Auth"
+      body: "#{msg}<br/>Please Input Admin Password"
+
+  self.confirm_action = (msg) ->
+    dfd = $.Deferred()
+    a = Math.floor(Math.random() * 40) + 10
+    b = Math.floor(Math.random() * 40) + 10
+    AWSSC.ModalPrompt().show
+      title: "Are you sure?"
+      body: "#{msg}<br/>#{a} + #{b} == ??"
+    .done (val) ->
+        ret = (a + b == Math.floor(val))
+        if ret
+          dfd.resolve()
+        else
+          dfd.reject()
+    .fail ->
+        dfd.reject()
+    dfd.promise()
+
+  self.onInfo = (ec2model) ->
+    data = ec2model.data
+    info = ["",
+            "ID: #{data.ec2_id}"
+            "Name: #{name}"
+            "type: #{data.instance_type}"
+            "private IP: #{data.private_ip}"
+            "public IP: #{data.public_ip}"
+            "status: #{data.status}"
+            "tags: <ul><li>#{("#{k}: #{v}" for k,v of data.tags).join("</li><li>")}</li></ul>"
+    ].join("<br>")
+    self.show_message(info, name)
+
+
+  viewModel = EC2PageViewModel(self)
+  self.account_name = viewModel.resolve_account_name(opts)
+  ko.applyBindings(viewModel, canvas[0])
+  return self
+
+EC2PageViewModel = (controller) ->
+  model = {}
+  regionVCList = []
+  # properties
+  model.hideStopped = ko.observable(false)
+  model.filterText = ko.observable("")
+  model.regions = ko.observableArray([])
+  # Handlers
+  model.onInfo = (ec2model) ->
+    controller.onInfo(ec2model)
+
+  model.onReload = ->
+    for panelVC in regionVCList
+      panelVC.reload_all()
+
+  model.onToggleHideStop = ->
+    model.hideStopped(!model.hideStopped())
+    for regionVC in regionVCList
+      regionVC.toggle_hide_stop(model.hideStopped())
+
+  model.filterText.subscribe (newValue) ->
+    for regionVC in regionVCList
+      regionVC.filter_instance(newValue)
+
+  model.addRegion = (region) ->
+    if region.ec2_list && region.ec2_list.length > 0
+      regionVC = AWSSC.RegionViewModel(model, {})
+      regionVC.add_models region.ec2_list,
+        region: region.region
+        account_name: region.account_name
+      model.regions.push regionVC
+      regionVCList.push(regionVC)
+
+  model.show_message = controller.show_message
+  model.confirm_admin = controller.confirm_admin
+  model.confirm_action = controller.confirm_action
+
+  # Storage Access
+  model.resolve_account_name = (opts) ->
     localStorage.account_name =
       if opts.account_name
         opts.account_name
@@ -27,212 +115,56 @@ AWSSC.EC2 = (opts) ->
           opts.default_account_name
     $("##{opts.account_dropdown}").html(localStorage.account_name) if localStorage.account_name
     localStorage.account_name
-
-  self.account_name = resolve_account_name(opts)
-
-  self.show_ec2_instances = (regions) ->
-    regions ?= region_list
-    for region in regions
-      $.get("/api/ec2/?region=#{region}&account_name=#{self.account_name}").done (response) ->
-        if response.ec2_list && response.ec2_list.length > 0
-          rc = $("<div>").append($("<h1>").html(response.region))
-          canvas.append(rc)
-          panelVC = AWSSC.PanelViewController(canvas: rc)
-          panelVC.add_models response.ec2_list,
-            region: response.region
-            account_name: self.account_name
-          panelVC_list.push(panelVC)
-
-  $("##{opts.reload}").on "click", ->
-    for panelVC in panelVC_list
-      panelVC.reload_all()
-
-  $("##{opts.toggle_hide_stop}").on "click", ->
-    hide_stopped = !hide_stopped
-    for panelVC in panelVC_list
-      panelVC.toggle_hide_stop(hide_stopped)
-
-  $("##{opts.filter_text}").on "change", (e) ->
-    filterText = e.target.value
-    for panelVC in panelVC_list
-      panelVC.filter_instance(filterText)
-
-  return self
-
-AWSSC.EC2Model = (data) ->
-  API_BASE = "/api/ec2/"
-  self = {}
-  self.data = data
-  self.region = data.region
-  self.account_name = data.account_name
-  api_params = ->
-    region: self.region
-    account_name: self.account_name
-  polling_sec = 10000
-
-  self.is_running = -> self.data.status == "running"
-  self.is_stopped = -> self.data.status == "stopped"
-
-  self.can_start_stop = ->
-    self.data.tags['APIStartStop'] == 'YES'
-
-  self.use_stop_only = ->
-    self.data.tags['APIAutoOperationMode'] == 'STOP'
-
-  self.run_schedule = ->
-    self.data.tags['APIRunSchedule']
-
-  self.update = ->
-    $.get("#{API_BASE}#{self.data.ec2_id}", api_params())
-    .done (response) ->
-        self.data = response.ec2
-    .always (response) ->
-        console.log response
-
-  check_state = (dfd, ok_func, ng_func) ->
-    self.update().done ->
-      if ok_func()
-        dfd.resolve()
-      else if ng_func()
-        dfd.fail()
-      else
-        dfd.notify()
-        $.wait(polling_sec).done ->
-          check_state(dfd, ok_func, ng_func)
-
-  post_api = (dfd, op_type, params=api_params()) ->
-    $.post("#{API_BASE}#{self.data.ec2_id}/#{op_type}", params)
-    .always (response) ->
-        console.log(response)
-    .fail (response) ->
-        console.log(response.responseText)
-        dfd.reject("ERROR Status=#{response.status}")
+  return model
 
 
-  self.start_instance = ->
-    dfd = $.Deferred()
-    post_api(dfd, "start").done ->
-      check_state(dfd, self.is_running, self.is_stopped)
-    self.data.status = '-'
-    dfd.promise()
 
-  self.stop_instance = ->
-    dfd = $.Deferred()
-    post_api(dfd, "stop").done ->
-      check_state(dfd, self.is_stopped, self.is_running)
-    dfd.promise()
 
-  lock_unlock_operation = (op_type, password) ->
-    dfd = $.Deferred()
-    params = api_params()
-    params.password = password
-    post_api(dfd, op_type, params).done (response) ->
-      if response.success
-        $.wait(500).done ->
-          dfd.resolve()
-      else
-        dfd.reject(response.message)
-    dfd.promise()
 
-  self.lock_operation = (password) ->
-    lock_unlock_operation("lock", password)
 
-  self.unlock_operation = (password) ->
-    lock_unlock_operation("unlock", password)
 
-  self.update_schedule = (val, use_stop_only) ->
-    dfd = $.Deferred()
-    params = api_params()
-    params.schedule = val
-    params.use_stop_only = if use_stop_only then "1" else "0"
-    post_api(dfd, "schedule", params).done (response) ->
-      if response.success
-        dfd.resolve()
-      else
-        dfd.reject(response.message)
-    dfd.promise()
 
-  return self
 
-AWSSC.PanelViewController = (opts) ->
+
+AWSSC.RegionViewModel = (parent, opts) ->
   self = {}
   self.opts = opts
-  canvas = opts.canvas
-  panel_list = []
+  self.ec2List = ko.observableArray([])
 
-  self.add_models = (ec2_list, opts) ->
-    for ec2 in ec2_list
+  self.add_models = (list, opts) ->
+    for ec2 in list
       ec2.region = opts.region
       ec2.account_name = opts.account_name
-      ec2model = AWSSC.EC2Model(ec2)
-      self.add(ec2model)
+      ec2model = AWSSC.EC2ViewModel(self, ec2)
+      self.ec2List.push ec2model
+      #self.add(ec2model)
 
   self.reload_all = ->
-    for panel in panel_list
-      panel.reload()
+    for ec2 in ec2List
+      ec2.reload()
 
   self.toggle_hide_stop = (hide_stopped) ->
-    for panel in panel_list
-      panel.toggle_hide_stop(hide_stopped)
+    for ec2 in ec2List
+      ec2.toggle_hide_stop(hide_stopped)
 
+  self.show_message = parent.show_message
+  self.confirm_admin = parent.confirm_admin
+  self.confirm_action = parent.confirm_action
 
-  self.add = (ec2model) ->
-    panel = AWSSC.PanelView(ec2model)
-    panel_list.push(panel)
-    canvas.append(panel.content)
-    panel.update_view()
-    panel.check_need_update()
+#  self.add = (ec2model) ->
+#    panel = AWSSC.EC2PanelView(ec2model)
+#    ec2List.push(panel)
+#    canvas.append(panel.content)
+#    panel.update_view()
+#    panel.check_need_update()
 
   self.filter_instance = (filterText) ->
-    for panel in panel_list
+    for panel in ec2List
       panel.filter(filterText)
 
   return self
 
-AWSSC.ModalDialog = ->
-  self = {}
-  self.show = (opts) ->
-    dialog = $("<div>").html(opts.body)
-    $("body").append(dialog)
-    dialog.dialog
-      title: opts.title
-      modal: true
-      buttons:
-        "OK": -> dialog.dialog("close")
-      close: -> dialog.remove()
-  return self
-
-AWSSC.ModalPrompt = ->
-  self = {}
-  self.show = (opts) ->
-    dfd = $.Deferred()
-    dialog = $("<div>").html(opts.body).hide()
-    textInput = $('<input type="text">').attr(size: opts.size || 30)
-    textInput.val(opts.value) if opts.value
-    textInput.on "keypress", (e) ->
-      if e.keyCode == 13
-        ok_button_pressed()
-    ok_button_pressed = ->
-      dfd.resolve(textInput.val())
-      dialog.dialog("close")
-
-    dialog.append($("<div>").append(textInput))
-    if opts.extra
-      dialog.append(opts.extra)
-    $("body").append(dialog)
-    dialog.dialog
-      title: opts.title
-      modal: true
-      buttons:
-        "OK": ok_button_pressed
-        "Cancel": -> dialog.dialog("close")
-      close: ->
-        dialog.remove()
-        dfd.reject(null)
-    dfd.promise()
-  return self
-
-AWSSC.PanelView = (model) ->
+AWSSC.EC2PanelView = (model) ->
   self = {}
   self.model = model
   name = model.data.tags.Name
@@ -367,9 +299,11 @@ AWSSC.PanelView = (model) ->
     data = self.model.data
     launch_time = new Date(data.launch_time)
     now = new Date()
+
     hours = Math.floor((now - launch_time)/1000/3600)
     cost_per_hour = Math.floor(cost_table[data.instance_type] * region_rate["ap-southeast-1"] * 10000) / 10000
     cost = Math.floor(cost_per_hour * hours)
+
     self.content.find(".ec2-panel-item-name").html(data.tags.Name)
     self.content.find(".ec2-panel-item-type").html(data.instance_type).addClass(data.instance_type.replace(".", ""))
     self.content.find(".ec2-panel-item-launch-time").html(launch_time.toLocaleString())
@@ -428,37 +362,6 @@ AWSSC.PanelView = (model) ->
 
   return self
 
-cost_table =   # virginia, US doller per hour
-  "m3.xlarge": 0.45
-  "m3.2xlarge": 0.9
-  "m1.small": 0.06
-  "m1.medium": 0.12
-  "m1.large": 0.24
-  "m1.xlarge": 0.48
-  "c3.large": 0.15
-  "c3.xlarge": 0.3
-  "c3.2xlarge": 0.6
-  "c3.4xlarge": 1.2
-  "c3.8xlarge": 2.4
-  "c1.medium": 0.145
-  "c1.xlarge": 0.58
-  "cc2.8xlarge": 2.4
-  "g2.2xlarge": 0.65
-  "cg1.4xlarge": 2.1
-  "m2.xlarge": 0.41
-  "m2.2xlarge": 0.82
-  "m2.4xlarge": 1.64
-  "cr1.8xlarge": 3.5
-  "i2.xlarge": 0.853
-  "i2.2xlarge": 1.705
-  "i2.4xlarge": 3.41
-  "i2.8xlarge": 6.82
-  "hs1.8xlarge": 4.6
-  "hi1.4xlarge": 3.1
-  "t1.micro": 0.02
-
-region_rate =
-  "ap-southeast-1": 8/6.0
 
 region_list = [
   "us-east-1"

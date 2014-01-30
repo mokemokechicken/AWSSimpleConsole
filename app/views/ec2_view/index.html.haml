@@ -8,20 +8,47 @@
         %li(class="#{@account_name == account.name ? 'active' : ''}")
           %a(href="?account_name=#{account.name}")= account.name
 
-.input-group.top-controll
-  %button.top-controll.btn#reload(type="button") 全て更新
-  %button.top-controll.btn#toggle_hide_stop(type="button") stoppedを隠す/表示
-  %input.top-controll.form-control#filter_text(type="text" size="20" placeholder="filter text")
-
 %div#main
+  .input-group.top-controll
+    %button.top-controll.btn(type="button" data-bind="click: onReload") 全て更新
+    %button.top-controll.btn(type="button" data-bind="click: onToggleHideStop") stoppedを隠す/表示
+    %input.top-controll.form-control(type="text" size="20" placeholder="filter text" data-bind="value: filterText")
+
+  .aws-region(data-bind="foreach: regions")
+    %h1(data-bind="region")
+    %div(data-bind="foreach: ec2List")
+      .ec2-panel-item
+        %button.btn.btn-small(type="button" data-bind="click: $root.onInfo")
+          %i.icon.icon-info-sign
+        %button.btn.btn-small(type="button" data-bind="click: onReload")
+          %i.icon.icon-refresh
+        %button.btn.btn-small(type="button" data-bind="visible: can_start_stop()" )
+          %i.icon.icon-edit
+          %i.icon.icon-calendar
+        %button.btn.btn-small(type="button" data-bind="click: onLockUnlock")
+          %span(data-bind="visible: can_start_stop()" )
+            %i.icon.icon-hand-right
+            %i.icon.icon-lock
+          %span(data-bind="visible: !can_start_stop()" )
+            %i.icon.icon-hand-right
+            %i.icon.icon-unlock
+        .ec2-panel-item-name(data-bind="text: name")
+        .ec2-panel-item-type(data-bind="text: instance_type, css: instanceTypeCSS")
+        .ec2-panel-item-launch-time(data-bind="text: launch_time")
+        .ec2-panel-item-status(data-bind="text: status, css: status")
+        %span Schedule:
+        %span.ec2-panel-item-schedule(data-bind="")
+        .ec2-panel-item-auto-mode(data-bind="")
+        %div
+          %button.btn.btn-default.ec2-start-stop(data-bind="text: startStopBtnLabel, visible: can_start_stop()")
+            %i.icon.icon-spinner(data-bind="visible: is_state_changing" )
+        .ec2-panel-item-cost(data-bind="text: cost")
+
 
 :coffee
   $ ->
     ec2 = AWSSC.EC2
       canvas: "main"
-      reload: "reload"
-      toggle_hide_stop: "toggle_hide_stop"
-      filter_text: "filter_text"
       account_name: "#{@account_name}"
       default_account_name: "#{@default_account_name}"
       account_dropdown: "account_dropdown"
