@@ -1,5 +1,8 @@
 AWSSC = window.AWSSC = window.AWSSC ? {}
 
+AWSSC.config = AWSSC.config ? {}
+AWSSC.config.API_BASE = "/api/ec2/"
+
 $.wait = (duration) ->
   dfd = $.Deferred()
   setTimeout( ->
@@ -16,7 +19,7 @@ AWSSC.EC2 = (opts) ->
   self.show_ec2_instances = (regions) ->
     regions ?= region_list
     for region in regions
-      $.get("/api/ec2/?region=#{region}&account_name=#{self.account_name}").done (response) ->
+      $.get("#{AWSSC.config.API_BASE}?region=#{region}&account_name=#{self.account_name}").done (response) ->
         response.account_name = self.account_name
         viewModel.addRegion(response)
 
@@ -47,20 +50,6 @@ AWSSC.EC2 = (opts) ->
         dfd.reject()
     dfd.promise()
 
-  self.onInfo = (ec2model) ->
-    data = ec2model.data
-    info = ["",
-            "ID: #{data.ec2_id}"
-            "Name: #{name}"
-            "type: #{data.instance_type}"
-            "private IP: #{data.private_ip}"
-            "public IP: #{data.public_ip}"
-            "status: #{data.status}"
-            "tags: <ul><li>#{("#{k}: #{v}" for k,v of data.tags).join("</li><li>")}</li></ul>"
-    ].join("<br>")
-    self.show_message(info, name)
-
-
   viewModel = EC2PageViewModel(self)
   self.account_name = viewModel.resolve_account_name(opts)
   ko.applyBindings(viewModel, canvas[0])
@@ -74,9 +63,6 @@ EC2PageViewModel = (controller) ->
   model.filterText = ko.observable("")
   model.regions = ko.observableArray([])
   # Handlers
-  model.onInfo = (ec2model) ->
-    controller.onInfo(ec2model)
-
   model.onReload = ->
     for panelVC in regionVCList
       panelVC.reload_all()
@@ -92,7 +78,7 @@ EC2PageViewModel = (controller) ->
 
   model.addRegion = (region) ->
     if region.ec2_list && region.ec2_list.length > 0
-      regionVC = AWSSC.RegionViewModel(model, {})
+      regionVC = AWSSC.RegionViewModel(model, region)
       regionVC.add_models region.ec2_list,
         region: region.region
         account_name: region.account_name
@@ -119,16 +105,10 @@ EC2PageViewModel = (controller) ->
 
 
 
-
-
-
-
-
-
-
 AWSSC.RegionViewModel = (parent, opts) ->
   self = {}
   self.opts = opts
+  self.regionName = opts.region
   self.ec2List = ko.observableArray([])
 
   self.add_models = (list, opts) ->
@@ -137,31 +117,24 @@ AWSSC.RegionViewModel = (parent, opts) ->
       ec2.account_name = opts.account_name
       ec2model = AWSSC.EC2ViewModel(self, ec2)
       self.ec2List.push ec2model
-      #self.add(ec2model)
+      if ec2model.check_need_update()
+        ec2model.update()
 
   self.reload_all = ->
-    for ec2 in ec2List
+    for ec2 in self.ec2List()
       ec2.reload()
 
   self.toggle_hide_stop = (hide_stopped) ->
-    for ec2 in ec2List
+    for ec2 in self.ec2List()
       ec2.toggle_hide_stop(hide_stopped)
+
+  self.filter_instance = (filterText) ->
+    for ec2 in self.ec2List()
+      ec2.filterText(filterText)
 
   self.show_message = parent.show_message
   self.confirm_admin = parent.confirm_admin
   self.confirm_action = parent.confirm_action
-
-#  self.add = (ec2model) ->
-#    panel = AWSSC.EC2PanelView(ec2model)
-#    ec2List.push(panel)
-#    canvas.append(panel.content)
-#    panel.update_view()
-#    panel.check_need_update()
-
-  self.filter_instance = (filterText) ->
-    for panel in ec2List
-      panel.filter(filterText)
-
   return self
 
 AWSSC.EC2PanelView = (model) ->
@@ -353,7 +326,6 @@ AWSSC.EC2PanelView = (model) ->
   self.toggle_hide_stop = (hideStopped) ->
     hide_stopped = hideStopped
     check_hide_panel()
-
 
   self.filter = (filterText) ->
     filter_text = filterText

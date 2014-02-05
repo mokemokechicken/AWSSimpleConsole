@@ -1,12 +1,12 @@
 AWSSC = window.AWSSC = window.AWSSC ? {}
 
-AWSSC.EC2ViewModel = (parent, data) ->
-  API_BASE = "/api/ec2/"
+AWSSC.EC2ViewModel = (parent, in_data) ->
   self = {}
-  self.data = ko.observable data
-  self.region = data.region
-  self.account_name = data.account_name
-  self.name = data.tags.Name
+  self.data = ko.observable in_data
+  self.region = in_data.region
+  self.account_name = in_data.account_name
+  self.name = in_data.tags.Name
+
   api_params = ->
     region: self.region
     account_name: self.account_name
@@ -15,6 +15,19 @@ AWSSC.EC2ViewModel = (parent, data) ->
   # view event handlers
   self.onReload = ->
     self.update()
+
+  self.onInfo = ->
+    data = self.data()
+    info = ["",
+            "ID: #{data.ec2_id}"
+            "Name: #{self.name}"
+            "type: #{data.instance_type}"
+            "private IP: #{data.private_ip}"
+            "public IP: #{data.public_ip}"
+            "status: #{data.status}"
+            "tags: <ul><li>#{("#{k}: #{v}" for k,v of data.tags).join("</li><li>")}</li></ul>"
+    ].join("<br>")
+    parent.show_message(info, name)
 
   self.onLockUnlock = ->
     if self.can_start_stop()
@@ -29,6 +42,23 @@ AWSSC.EC2ViewModel = (parent, data) ->
       .fail (reason) ->
           parent.show_message(reason, "failure") if reason
 
+  self.onEditSchedule = ->
+    checkbox = $('<input type="checkbox">')
+    if self.use_stop_only()
+      checkbox.prop("checked", true)
+    extra = $('<div>').append(checkbox).append($("<span> 自動STARTは行わない</span>"))
+    AWSSC.ModalPrompt().show
+      title: "Enter Schedule"
+      body: "ex1) 月-金 && 9-21<br/>ex2) 月,水,金 && 9-12,13-20<br/>ex3) 9-21"
+      value: self.run_schedule() || "月-金 && 10-22"
+      extra: extra
+    .done (val) ->
+        self.update_schedule(val, checkbox.prop("checked"))
+        .done ->
+            self.update()
+        .fail (reason) ->
+            show_message(reason, "failure") if reason
+
   # logic
   self.is_running = ko.computed -> self.data().status == "running"
   self.is_stopped = ko.computed -> self.data().status == "stopped"
@@ -37,14 +67,14 @@ AWSSC.EC2ViewModel = (parent, data) ->
   self.can_start_stop = ko.computed ->
     self.data().tags['APIStartStop'] == 'YES'
 
-  self.use_stop_only = ->
+  self.use_stop_only = ko.computed ->
     self.data().tags['APIAutoOperationMode'] == 'STOP'
 
-  self.run_schedule = ->
+  self.run_schedule = ko.computed ->
     self.data().tags['APIRunSchedule']
 
   self.update = ->
-    $.get("#{API_BASE}#{self.data().ec2_id}", api_params())
+    $.get("#{AWSSC.config.API_BASE}#{self.data().ec2_id}", api_params())
     .done (response) ->
         self.data(response.ec2)
     .always (response) ->
@@ -62,7 +92,7 @@ AWSSC.EC2ViewModel = (parent, data) ->
           check_state(dfd, ok_func, ng_func)
 
   post_api = (dfd, op_type, params=api_params()) ->
-    $.post("#{API_BASE}#{self.data().ec2_id}/#{op_type}", params)
+    $.post("#{AWSSC.config.API_BASE}#{self.data().ec2_id}/#{op_type}", params)
     .always (response) ->
         console.log(response)
     .fail (response) ->
@@ -120,6 +150,8 @@ AWSSC.EC2ViewModel = (parent, data) ->
     new Date(self.data().launch_time).toLocaleDateString()
 
   self.instance_type = self.data().instance_type
+  self.hideStop = ko.observable(false)
+  self.filterText = ko.observable("")
 
   self.status = ko.computed -> self.data().status
 
@@ -135,14 +167,26 @@ AWSSC.EC2ViewModel = (parent, data) ->
   self.instanceTypeCSS = ko.computed ->
     self.data().instance_type.replace(".", "")
 
-  self.startStopBtnLabel = ko.computed ->
-    if self.is_running()
-      "STOP"
-    else if self.is_stopped()
-      "START"
-    else
-      ""
+  self.toggle_hide_stop = (hideStopped) ->
+    self.hideStop(hideStopped)
 
+  self.isIncludeFilterText = ko.computed ->
+    if !self.filterText()
+      true
+    else
+      ft = self.filterText().toLocaleLowerCase()
+      for k, v of self.data().tags
+        if v && v.toLocaleLowerCase().indexOf(ft) >= 0
+          return true
+      false
+
+  self.shouldHide = ko.computed ->
+    (self.hideStop() && self.is_stopped()) || !self.isIncludeFilterText()
+
+  self.check_need_update = (expire_span=86400) ->
+    updated_time = new Date(self.data().updated_at)
+    now = new Date()
+    return (now - updated_time)/1000 > expire_span
 
   return self
 

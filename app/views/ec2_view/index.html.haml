@@ -15,14 +15,14 @@
     %input.top-controll.form-control(type="text" size="20" placeholder="filter text" data-bind="value: filterText")
 
   .aws-region(data-bind="foreach: regions")
-    %h1(data-bind="region")
+    %h1(data-bind="text: regionName")
     %div(data-bind="foreach: ec2List")
-      .ec2-panel-item
-        %button.btn.btn-small(type="button" data-bind="click: $root.onInfo")
+      .ec2-panel-item(data-bind="visible: !shouldHide()")
+        %button.btn.btn-small(type="button" data-bind="click: onInfo")
           %i.icon.icon-info-sign
         %button.btn.btn-small(type="button" data-bind="click: onReload")
           %i.icon.icon-refresh
-        %button.btn.btn-small(type="button" data-bind="visible: can_start_stop()" )
+        %button.btn.btn-small(type="button" data-bind="visible: can_start_stop(), click: onEditSchedule" )
           %i.icon.icon-edit
           %i.icon.icon-calendar
         %button.btn.btn-small(type="button" data-bind="click: onLockUnlock")
@@ -37,12 +37,16 @@
         .ec2-panel-item-launch-time(data-bind="text: launch_time")
         .ec2-panel-item-status(data-bind="text: status, css: status")
         %span Schedule:
-        %span.ec2-panel-item-schedule(data-bind="")
-        .ec2-panel-item-auto-mode(data-bind="")
+        %span.ec2-panel-item-schedule(data-bind="text: run_schedule")
+        .ec2-panel-item-auto-mode(data-bind="visible: can_start_stop()")
+          %span(data-bind="visible: use_stop_only()") STOP Only
+          %span(data-bind="visible: !use_stop_only()") STOP and Start
         %div
-          %button.btn.btn-default.ec2-start-stop(data-bind="text: startStopBtnLabel, visible: can_start_stop()")
+          %button.btn.btn-default.ec2-start-stop(data-bind="visible: can_start_stop()")
+            %span(data-bind="visible: is_running(), click: stop_instance") STOP
+            %span(data-bind="visible: is_stopped(), click: start_instance") START
             %i.icon.icon-spinner(data-bind="visible: is_state_changing" )
-        .ec2-panel-item-cost(data-bind="text: cost")
+        .ec2-panel-item-cost(data-bind="text: cost, visible: is_running()")
 
 
 :coffee
