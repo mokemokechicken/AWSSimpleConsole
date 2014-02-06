@@ -28,9 +28,6 @@ gem 'jquery-ui-rails'
 gem 'therubyracer', platforms: :ruby
 gem 'execjs'
 
-# Use jquery as the JavaScript library
-gem 'jquery-rails'
-
 # Turbolinks makes following links in your web application faster. Read more: https://github.com/rails/turbolinks
 gem 'turbolinks'
 
@@ -67,4 +64,5 @@ gem 'rspec-rails'
 gem 'puma'
 
 gem 'devise_ldap_authenticatable', '~> 0.8.1'
+gem 'knockoutjs-rails'
 
