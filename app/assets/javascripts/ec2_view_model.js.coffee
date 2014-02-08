@@ -59,6 +59,14 @@ AWSSC.EC2ViewModel = (parent, in_data) ->
         .fail (reason) ->
             show_message(reason, "failure") if reason
 
+  self.onStart = ->
+    parent.confirm_action("Start #{self.name}?").done ->
+      self.start_instance()
+
+  self.onStop = ->
+    parent.confirm_action("Stop #{self.name}?").done ->
+      self.stop_instance()
+
   # logic
   self.is_running = ko.computed -> self.data().status == "running"
   self.is_stopped = ko.computed -> self.data().status == "stopped"
