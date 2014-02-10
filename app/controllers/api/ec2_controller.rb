@@ -72,7 +72,7 @@ class Api::Ec2Controller < ApplicationController
   private
   def record_log(op, target, options=nil)
     options = JSON.dump(options) if options
-    username = current_user ? current_user.name : 'guest'
+    username = current_user ? current_user.email : 'guest'
     OperationLog.create(:username => username, :op => op, :target => target, :options => options)
   end
 end
