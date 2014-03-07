@@ -41,11 +41,10 @@
         .ec2-panel-item-auto-mode(data-bind="visible: can_start_stop()")
           %span(data-bind="visible: use_stop_only()") STOP Only
           %span(data-bind="visible: !use_stop_only()") STOP and Start
-        %div
-          %button.btn.btn-default.ec2-start-stop(data-bind="visible: can_start_stop()")
-            %span(data-bind="visible: is_running(), click: onStop") STOP
-            %span(data-bind="visible: is_stopped(), click: onStart") START
-            %i.icon.icon-spinner(data-bind="visible: is_state_changing" )
+        %div(data-bind="visible: can_start_stop()")
+          %button.btn.btn-default.ec2-start-stop(data-bind="visible: is_running(), click: onStop") STOP
+          %button.btn.btn-default.ec2-start-stop(data-bind="visible: is_stopped(), click: onStart") START
+          %i.icon.icon-spinner(data-bind="visible: is_state_changing" )
         .ec2-panel-item-cost(data-bind="text: cost, visible: is_running()")
 
 
