@@ -66,3 +66,5 @@ gem 'puma'
 gem 'devise_ldap_authenticatable', '~> 0.8.1'
 gem 'knockoutjs-rails'
 
+# Read Setting Info as ENV Variables: http://qiita.com/closer/items/f8d8ba00ae86d7051764
+gem 'dotenv-rails'

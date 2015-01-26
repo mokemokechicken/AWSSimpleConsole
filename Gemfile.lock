@@ -56,6 +56,9 @@ GEM
       devise (>= 3.0)
       net-ldap (>= 0.3.1, < 0.6.0)
     diff-lcs (1.2.5)
+    dotenv (1.0.2)
+    dotenv-rails (1.0.2)
+      dotenv (= 1.0.2)
     erb2haml (0.1.5)
       html2haml
     erubis (2.7.0)
@@ -206,6 +209,7 @@ DEPENDENCIES
   aws-sdk
   coffee-rails (~> 4.0.0)
   devise_ldap_authenticatable (~> 0.8.1)
+  dotenv-rails
   erb2haml
   execjs
   font-awesome-less
