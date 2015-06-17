@@ -199,14 +199,24 @@ AWSSC.EC2ViewModel = (parent, in_data) ->
   return self
 
 cost_table =   # virginia, US doller per hour
-  "m3.medium": 0.070
-  "m3.large": 0.140
-  "m3.xlarge": 0.280
-  "m3.2xlarge": 0.560
+  "m4.large": 0.126
+  "m4.xlarge": 0.252
+  "m4.2xlarge": 0.504
+  "m4.4xlarge": 1.008
+  "m4.10xlarge": 2.520
+  "m3.medium": 0.067
+  "m3.large": 0.133
+  "m3.xlarge": 0.266
+  "m3.2xlarge": 0.532
   "m1.small": 0.044
   "m1.medium": 0.087
   "m1.large": 0.175
   "m1.xlarge": 0.350
+  "c4.large": 0.110
+  "c4.xlarge": 0.220
+  "c4.2xlarge": 0.441
+  "c4.4xlarge": 0.882
+  "c4.8xlarge": 1.763
   "c3.large": 0.105
   "c3.xlarge": 0.210
   "c3.2xlarge": 0.420
@@ -216,6 +226,7 @@ cost_table =   # virginia, US doller per hour
   "c1.xlarge": 0.520
   "cc2.8xlarge": 2.0
   "g2.2xlarge": 0.65
+  "g2.8xlarge": 2.60
   "cg1.4xlarge": 2.1
   "m2.xlarge": 0.245
   "m2.2xlarge": 0.490
@@ -225,6 +236,10 @@ cost_table =   # virginia, US doller per hour
   "i2.2xlarge": 1.705
   "i2.4xlarge": 3.41
   "i2.8xlarge": 6.82
+  "d2.xlarge": 0.690
+  "d2.2xlarge": 1.380
+  "d2.4xlarge": 2.760
+  "d2.8xlarge": 5.520
   "hs1.8xlarge": 4.6
   "hi1.4xlarge": 3.1
   "t1.micro": 0.02
