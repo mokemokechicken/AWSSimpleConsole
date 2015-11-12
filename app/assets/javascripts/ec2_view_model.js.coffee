@@ -246,6 +246,7 @@ cost_table =   # virginia, US doller per hour
   "t2.micro": 0.013
   "t2.small": 0.026
   "t2.medium": 0.052
+  "t2.large": 0.104
   "r3.large": 0.175
   "r3.xlarge": 0.350
   "r3.2xlarge": 0.700
